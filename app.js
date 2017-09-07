@@ -2,7 +2,7 @@ const
     express = require('express'),
     app = express(),
     path = require('path'),
-    port = 3001,
+    port = require('./config').port,
     compression = require('compression'),
     bodyParser = require('body-parser'),
     errorlog = require('./functions').error;

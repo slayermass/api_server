@@ -161,9 +161,9 @@ router.delete('/upload', (req, res, next) => {
             resPaths.push(full_path + '/' + files[i]);
         }
 
-        del(resPaths)
+        //удаление с другого диска
+        del(resPaths, { force: true })
             .then(paths => {
-                console.log(paths);
                 res.json(200);
             });
     }
