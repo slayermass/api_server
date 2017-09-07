@@ -9,6 +9,7 @@ const
     pathExists = require('path-exists'),
     errorlog = require('../../functions').error,
     mime = require('mime-types'),
+    del = require('del'),
 
     //разрешенные расширения
     allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp4'],
@@ -107,19 +108,19 @@ router.post('/upload', upload.any(), function(req, res){
  *
  * @param {string} n - название файла
  */
-router.get('/upload', (req, res, next) => {
-    if(!req.query.n) {
+router.get('/upload/:n', (req, res, next) => {
+    if(!req.params.n) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
-        const filePath = full_path + '/' + req.query.n;
+        const filePath = full_path + '/' + req.params.n;
         fs.exists(filePath, (exists) => {
             if (exists) {
                 let stat = fs.statSync(filePath);
 
                 res.writeHead(200, {
-                    'Content-Type': mime.contentType(req.query.n),
+                    'Content-Type': mime.contentType(req.params.n),
                     'Content-Length': stat.size
                 });
 
@@ -131,6 +132,40 @@ router.get('/upload', (req, res, next) => {
                 next(err);
             }
         });
+    }
+});
+
+/**
+ * удаление файла одиночное
+ *
+ * @param {string} n - название файла
+ */
+router.delete('/upload', (req, res, next) => {
+    let files = [];
+
+    //преобразование к массиву
+    if(!Array.isArray(req.body.files)) {
+        files.push(req.body.files);
+    } else {
+        files = req.body.files;
+    }
+
+    if(files.length === 0) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        let resPaths = [];
+
+        for(let i = 0; i < files.length; i ++) {
+            resPaths.push(full_path + '/' + files[i]);
+        }
+
+        del(resPaths)
+            .then(paths => {
+                console.log(paths);
+                res.json(200);
+            });
     }
 });
 
