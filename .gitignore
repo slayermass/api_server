@@ -1,0 +1,6 @@
+/views/
+/public/
+.idea
+/node_modules
+/config
+/package-lock.json
