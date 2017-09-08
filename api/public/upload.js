@@ -10,38 +10,32 @@ const
     errorlog = require('../../functions').error,
     mime = require('mime-types'),
     del = require('del'),
+    upload_files = require('../../models/mysql/upload_files'),
 
     //разрешенные расширения
     allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp4'],
     //папка для сохранения
     path_to_save_global = require('../../config').path_to_save_global,
 
-    date = new Date(),
-    day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
-    month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
-    upload_path = `${path_to_save_global}${date.getFullYear()}`,
-    upload_destiny = `${day}_${month}`,
-    full_path = upload_path + '/' + upload_destiny,
-
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             //проверка существования пути
-            pathExists(upload_path)
+            pathExists(getSavePath().upload_path)
                 .then(exists => {
                     if(exists === false) {
-                        fs.mkdirSync(upload_path);
+                        fs.mkdirSync(getSavePath().upload_path);
                     }
                 })
                 .then(() => {
-                    pathExists(full_path)
+                    pathExists(getSavePath().full_path)
                         .then(exists => {
                             if(exists === false) {
-                                fs.mkdirSync(full_path);
+                                fs.mkdirSync(getSavePath().full_path);
                             }
                         })
                         .then(() => {
                             //полный путь
-                            cb(null, full_path);
+                            cb(null, getSavePath().full_path);
                         });
                 })
                 .catch(err => {
@@ -51,7 +45,8 @@ const
         },
         filename: function (req, file, cb) {
             let ext = path.extname(file.originalname);
-            cb(null, Date.now() + ext);
+
+            cb(null, `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`); // имя должно быть точно уникальным
         }
     }),
 
@@ -64,6 +59,7 @@ const
             if(allowExts.indexOf(ext.toLowerCase().replace(/[^a-zA-Z]+/g, "")) === -1) {
                 return cb(null, false);//просто пропускать
             }
+
             cb(null, true);
         }
     });
@@ -93,6 +89,10 @@ router.post('/upload', upload.any(), function(req, res){
                     console.log(fpath + " deleted");
                 });
             } else {
+                //сохранение в бд
+                upload_files
+                    .onNewFile(req.files[i].originalname, req.files[i].filename, req.files[i].destination);
+
                 files.push(req.files[i].filename);
             }
         }
@@ -114,24 +114,37 @@ router.get('/upload/:n', (req, res, next) => {
         err.status = 400;
         next(err);
     } else {
-        const filePath = full_path + '/' + req.params.n;
-        fs.exists(filePath, (exists) => {
-            if (exists) {
-                let stat = fs.statSync(filePath);
+        //найти в базе
+        upload_files
+            .findByNameFile(req.params.n)
+            .then(data => {
+                const filePath = data.path + '/' + data.name_file;
 
-                res.writeHead(200, {
-                    'Content-Type': mime.contentType(req.params.n),
-                    'Content-Length': stat.size
+                //проверить наличие файла
+                fs.exists(filePath, (exists) => {
+                    if (exists) {
+                        let stat = fs.statSync(filePath);
+
+                        res.writeHead(200, {
+                            'Content-Type': mime.contentType(req.params.n),
+                            'Content-Length': stat.size,
+                            'Content-Disposition': `filename="${encodeURIComponent(data.original_name_file)}"`
+                        });
+
+                        let readStream = fs.createReadStream(filePath);
+                        readStream.pipe(res);
+                    } else {
+                        let err = new Error();
+                        err.status = 404;
+                        next(err);
+                    }
                 });
-
-                let readStream = fs.createReadStream(filePath);
-                readStream.pipe(res);
-            } else {
+            })
+            .catch(() => {
                 let err = new Error();
                 err.status = 404;
                 next(err);
-            }
-        });
+            });
     }
 });
 
@@ -155,18 +168,53 @@ router.delete('/upload', (req, res, next) => {
         err.status = 400;
         next(err);
     } else {
-        let resPaths = [];
+        //найти расположение файлов
+        upload_files
+            .findPathByNames(files)
+            .then(data => {
+                let resPaths = [];
 
-        for(let i = 0; i < files.length; i ++) {
-            resPaths.push(full_path + '/' + files[i]);
-        }
+                //собрать пути
+                for(let i = 0; i < data.length; i ++) {
+                    resPaths.push(data[i].path + '/' + data[i].name_file);
+                }
 
-        //удаление с другого диска
-        del(resPaths, { force: true })
-            .then(paths => {
-                res.json(200);
+                //удаление с другого диска
+                del(resPaths, { force: true })
+                    .then(() => {
+                        //удаление из базы
+                        upload_files
+                            .deleteByNames(files);
+
+                        res.json(200);
+                    });
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 404;
+                next(err);
             });
     }
 });
 
 module.exports = router;
+
+/**
+ * определение пути для сохранения файлов
+ *
+ * @returns {{upload_path: string, upload_destiny: string, full_path: string}}
+ */
+function getSavePath() {
+    let date = new Date(),
+        day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
+        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
+        upload_path = `${path_to_save_global}${date.getFullYear()}`,
+        upload_destiny = `${day}_${month}`,
+        full_path = upload_path + '/' + upload_destiny;
+
+    return {
+        upload_path,
+        upload_destiny,
+        full_path
+    };
+}
