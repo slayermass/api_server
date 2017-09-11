@@ -13,7 +13,7 @@ const
     upload_files = require('../../models/mysql/upload_files'),
 
     //разрешенные расширения
-    allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp4'],
+    allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp4', 'rar'],
     //папка для сохранения
     path_to_save_global = require('../../config').path_to_save_global,
 

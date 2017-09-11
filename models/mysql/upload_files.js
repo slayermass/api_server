@@ -8,6 +8,7 @@ const
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
     errorlog = require('../../functions').error,
+    mime = require('mime-types'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
 
 mysql.formatBind();
@@ -127,7 +128,7 @@ upload_files.deleteByNames = (name_files) => {
 /**
  * поиск для api
  *
- * @param {Int} limit - Кол-во файлов
+ * @param {int} limit - Кол-во файлов
  *
  * @returns {Promise}
  */
@@ -139,6 +140,10 @@ upload_files.findApi = (limit) => {
                 limit
             })
             .then(rows => {
+                //добавить расширение файла
+                for(let i = 0; i < rows.length; i++) {
+                    rows[i].ext = mime.extension(mime.contentType(rows[i].name_file));
+                }
                 resolve(rows);
             })
             .catch(err => {
