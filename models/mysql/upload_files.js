@@ -95,6 +95,7 @@ upload_files.findPathByNames = (name_files) => {
 };
 
 /**
+ * удаление файлов
  *
  * @param {Array} name_files - имена файлов
  *
@@ -112,6 +113,30 @@ upload_files.deleteByNames = (name_files) => {
         mysql
             .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `name_file` IN(:names)", {
                 names
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject();
+            })
+    });
+};
+
+/**
+ * поиск для api
+ *
+ * @param {Int} limit - Кол-во файлов
+ *
+ * @returns {Promise}
+ */
+upload_files.findApi = (limit) => {
+    return new Promise((resolve, reject) => {
+        //найти диалоги, в которых состоит пользователь
+        mysql
+            .getSqlQuery("SELECT `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` LIMIT :limit", {
+                limit
             })
             .then(rows => {
                 resolve(rows);

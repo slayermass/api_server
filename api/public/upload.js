@@ -108,7 +108,7 @@ router.post('/upload', upload.any(), function(req, res){
  *
  * @param {string} n - название файла
  */
-router.get('/upload/:n', (req, res, next) => {
+router.get('/upload/f/:n', (req, res, next) => {
     if(!req.params.n) {
         let err = new Error();
         err.status = 400;
@@ -195,6 +195,29 @@ router.delete('/upload', (req, res, next) => {
                 next(err);
             });
     }
+});
+
+/**
+ * получить список файлов
+ *
+ * @see upload_files.findApi
+ */
+router.get('/upload/list', (req, res, next) => {
+    const
+        qlimit = parseInt(req.query.limit, 10),
+
+        limit = (qlimit && qlimit < 50) ? qlimit : 50;
+
+    upload_files
+        .findApi(limit)
+        .then(data => {
+            res.send(data);
+        })
+        .catch(() => {
+            let err = new Error();
+            err.status = 500;
+            next(err);
+        });
 });
 
 module.exports = router;
