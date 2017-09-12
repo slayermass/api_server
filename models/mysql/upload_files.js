@@ -9,6 +9,7 @@ const
     entities = new Entities(),
     errorlog = require('../../functions').error,
     mime = require('mime-types'),
+    async = require('async'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
 
 mysql.formatBind();
@@ -16,28 +17,48 @@ mysql.formatBind();
 /**
  * внесение данных при загрузке файла
  *
- * @param {String} name_file    - оригинальное имя файла
- * @param {String} saveFileName - имя файла на диске
- * @param {String} path         - путь к файлу
+ * @param {Array} arr_files -
+*            original_name_file(оригинальное имя файла)
+             name_file(имя файла на диске)
+             path(путь к файлу)
  *
  * @returns {Promise}
  */
-upload_files.onNewFile = (name_file, saveFileName, path) => {
+upload_files.onNewFiles = (arr_files) => {
+    let farr = [];
+
+    for (let i = 0; i < arr_files.length; i++) {
+        farr.push(
+            function(callback) {
+                mysql
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`original_name_file`, `name_file`, `path`) VALUES (:original_name_file, :name_file, :path)", {
+                        original_name_file: entities.encode(arr_files[i].original_name_file),
+                        name_file: arr_files[i].name_file,
+                        path: arr_files[i].path
+                    })
+                    .then(row => {
+                        callback(null, {
+                            pk_file: row.insertId,
+                            original_name_file: entities.encode(arr_files[i].original_name_file),
+                            name_file: arr_files[i].name_file,
+                            upload_date: new Date().toISOString(), // неточное время конечно
+                            ext: mime.extension(mime.contentType(arr_files[i].name_file))
+                        });
+                    })
+                    .catch(err => {
+                        errorlog(err);
+                        callback(err)
+                    })
+            },
+        );
+    }
+
+    //динамический параллельный
     return new Promise((resolve, reject) => {
-        //найти диалоги, в которых состоит пользователь
-        mysql
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`original_name_file`, `name_file`, `path`) VALUES (:name_file, :saveFileName, :path)", {
-                name_file: entities.encode(name_file),
-                saveFileName,
-                path
-            })
-            .then(row => {
-                resolve(row.insertId);
-            })
-            .catch(err => {
-                errorlog(err);
-                reject();
-            })
+        async.parallel(farr, (err, results) => {
+            if(err) reject();
+            resolve(results);
+        });
     });
 };
 

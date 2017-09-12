@@ -75,6 +75,7 @@ const
  */
 router.post('/upload', upload.any(), function(req, res){
     let files = [];
+    let filesData = [];
 
     if(req.files !== undefined) {
         for (let i = 0; i < req.files.length; i++) {
@@ -89,15 +90,23 @@ router.post('/upload', upload.any(), function(req, res){
                     console.log(fpath + " deleted");
                 });
             } else {
-                //сохранение в бд
-                upload_files
-                    .onNewFile(req.files[i].originalname, req.files[i].filename, req.files[i].destination);
-
-                files.push(req.files[i].filename);
+                filesData.push({
+                    original_name_file: req.files[i].originalname,
+                    name_file: req.files[i].filename,
+                    path: req.files[i].destination
+                });
             }
         }
 
-        res.json({success: true, files});
+        //сохранение в бд
+        upload_files
+            .onNewFiles(filesData)
+            .then(files_data => {
+                res.json({success: true, files: files_data});
+            })
+            .catch(err => {
+                res.json({success: false, errors: 'имеются'});
+            });
     } else {
         res.json({success: false});
     }

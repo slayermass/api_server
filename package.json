@@ -9,6 +9,7 @@
   "author": "Fady Makram",
   "license": "MIT",
   "dependencies": {
+    "async": "^2.5.0",
     "body-parser": "^1.17.2",
     "compression": "^1.7.0",
     "del": "^3.0.0",
