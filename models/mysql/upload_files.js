@@ -157,7 +157,7 @@ upload_files.findApi = (limit) => {
     return new Promise((resolve, reject) => {
         //найти диалоги, в которых состоит пользователь
         mysql
-            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` LIMIT :limit ORDER BY `upload_date` DESC", {
+            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` ORDER BY `upload_date` DESC LIMIT :limit", {
                 limit
             })
             .then(rows => {
