@@ -112,7 +112,7 @@ upload_files.findPathByNames = (name_files) => {
             .catch(err => {
                 errorlog(err);
                 reject();
-            })
+            });
     });
 };
 

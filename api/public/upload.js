@@ -13,7 +13,7 @@ const
     upload_files = require('../../models/mysql/upload_files'),
 
     //разрешенные расширения
-    allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp4', 'rar'],
+    allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp', 'rar'],
     //папка для сохранения
     path_to_save_global = require('../../config').path_to_save_global,
 
@@ -55,6 +55,7 @@ const
         fileFilter: function(req, file, cb) {
             let ext = path.extname(file.originalname);
 
+            console.log(ext.toLowerCase().replace(/[^a-zA-Z]+/g, ""));
             //проверка по разрешению файла
             if(allowExts.indexOf(ext.toLowerCase().replace(/[^a-zA-Z]+/g, "")) === -1) {
                 return cb(null, false);//просто пропускать
@@ -69,11 +70,11 @@ const
  *
  * @param {Array} files - массив файлов для загрузки
  *
- * @returns {Json}
+ * @returns {json}
  *      {Bool} success - успешность загрузки
  *      {Array} files  - массив названий файлов
  */
-router.post('/upload', upload.any(), function(req, res){
+router.post('/upload', upload.any(), function(req, res) {
     let files = [];
     let filesData = [];
 
