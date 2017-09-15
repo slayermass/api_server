@@ -78,13 +78,15 @@ tags.checkSave = (tags, fk_site) => {
  *
  * @param {int} fk_site - ид ресурса
  * @param {int} limit   - кол-во тегов
+ * @param {int} offset  - отступ
  */
-tags.getAllBySite = (fk_site, limit) => {
+tags.getAllBySite = (fk_site, limit, offset) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `pk_tag` DESC LIMIT :limit;", {
+            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `pk_tag` DESC LIMIT :limit OFFSET :offset;", {
                 fk_site,
-                limit
+                limit,
+                offset
             })
             .then(rows => {
                 resolve(rows);

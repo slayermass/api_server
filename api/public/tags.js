@@ -49,7 +49,8 @@ router.post('/tags', (req, res, next) => {
  */
 router.get('/tags', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site),
-        limit = parseInt(req.query.limit) || 25;
+        limit = parseInt(req.query.limit) || 25,
+        offset = parseInt(req.query.offset) || 0;
 
     if(limit > 500) limit = 500;
 
@@ -59,7 +60,7 @@ router.get('/tags', (req, res, next) => {
         next(err);
     } else {
         tagsModel
-            .getAllBySite(fk_site, limit)
+            .getAllBySite(fk_site, limit, offset)
             .then(data => {
                 res.send(data);
             })
