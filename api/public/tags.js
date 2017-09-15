@@ -10,7 +10,7 @@ const router = require('express').Router(),
  * @returns {Array} {"pk_tag": {int},"name_tag": {String}},
  */
 router.post('/tags', (req, res, next) => {
-    let tags = [];
+    let tags = [], fk_site = parseInt(req.body.fk_site);
 
     if(Array.isArray(req.body.tags)) {
         for(let i = 0; i < req.body.tags.length; i++) {
@@ -24,13 +24,13 @@ router.post('/tags', (req, res, next) => {
         }
     }
 
-    if(tags.length === 0) {
+    if(tags.length === 0 || isNaN(fk_site)) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
         tagsModel
-            .checkSave(tags)
+            .checkSave(tags, fk_site)
             .then(data => {
                 res.send(data);
             })
@@ -45,10 +45,30 @@ router.post('/tags', (req, res, next) => {
 /**
  * получить теги
  *
- *
+ * @see tagsModel.getAllBySite
  */
 router.get('/tags', (req, res, next) => {
+    let fk_site = parseInt(req.query.fk_site),
+        limit = parseInt(req.query.limit) || 25;
 
+    if(limit > 500) limit = 500;
+
+    if(isNaN(fk_site)) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        tagsModel
+            .getAllBySite(fk_site, limit)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 500;
+                next(err);
+            });
+    }
 });
 
 module.exports = router;
