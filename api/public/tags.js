@@ -24,13 +24,13 @@ router.post('/tags', (req, res, next) => {
         }
     }
 
-    if(tags.length === 0 || isNaN(fk_site)) {
+    if(tags.length === 0) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
         tagsModel
-            .checkSave(tags, fk_site)
+            .checkSave(fk_site, tags)
             .then(data => {
                 res.send(data);
             })
@@ -54,15 +54,45 @@ router.get('/tags', (req, res, next) => {
 
     if(limit > 500) limit = 500;
 
-    if(isNaN(fk_site)) {
+    tagsModel
+        .getAllBySite(fk_site, limit, offset)
+        .then(data => {
+            res.send(data);
+        })
+        .catch(() => {
+            let err = new Error();
+            err.status = 500;
+            next(err);
+        });
+});
+
+/**
+ * поиск тегов по названию
+ *
+ * @see tagsModel.findByName
+ */
+router.get('/tags/findByName', (req, res, next) => {
+    let fk_site = parseInt(req.query.fk_site),
+        name = req.query.name || '';
+
+    if(name.length < 1) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
         tagsModel
-            .getAllBySite(fk_site, limit, offset)
+            .findByName(fk_site, name)
             .then(data => {
-                res.send(data);
+                let ret = [];
+
+                for(let i = 0; i < data.length; i++) {
+                    ret.push({
+                        id: data[i].pk_tag,
+                        label: data[i].name_tag
+                    });
+                }
+
+                res.json(ret);
             })
             .catch(() => {
                 let err = new Error();

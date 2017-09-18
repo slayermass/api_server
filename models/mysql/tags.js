@@ -17,10 +17,10 @@ mysql.formatBind();
  * создание тега
  * проверка существования
  *
- * @param {Array} tags - названия тегов
  * @param {int} fk_site - ид ресурса
+ * @param {Array} tags - названия тегов *
  */
-tags.checkSave = (tags, fk_site) => {
+tags.checkSave = (fk_site, tags) => {
     let farr = [];
 
     for(let i = 0; i < tags.length; i++) {
@@ -87,6 +87,32 @@ tags.getAllBySite = (fk_site, limit, offset) => {
                 fk_site,
                 limit,
                 offset
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                if(err === EMPTY_SQL) {
+                    resolve();
+                } else {
+                    errorlog(err);
+                    reject();
+                }
+            });
+    });
+};
+
+/**
+ * поиск тегов по названию
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {String} name - название тега
+ */
+tags.findByName = (fk_site, name) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `name_tag` LIKE '%" + entities.encode(name) + "%';", {
+                fk_site
             })
             .then(rows => {
                 resolve(rows);

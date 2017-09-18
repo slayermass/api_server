@@ -5,10 +5,17 @@ const
 
 /**
  * промежуточное по для проверки на доступ перед каждым действием в api
+ * + проверка на обяз параметр fk_site
  */
 router.all('/*', function (req, res, next) {
     if(allowIps.includes(requestIp.getClientIp(req))) {
-        next();
+        if(isNaN(parseInt(req.query.fk_site))) {
+            let err = new Error();
+            err.status = 400;
+            next(err);
+        } else {
+            next();
+        }
     } else {
         let err = new Error('Access Denied');
         err.status = 401;
