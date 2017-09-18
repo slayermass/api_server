@@ -9,7 +9,7 @@ const
  */
 router.all('/*', function (req, res, next) {
     if(allowIps.includes(requestIp.getClientIp(req))) {
-        if(isNaN(parseInt(req.query.fk_site))) {
+        if(isNaN(parseInt(req.query.fk_site)) && req.path !== '/sites') {
             let err = new Error();
             err.status = 400;
             next(err);
