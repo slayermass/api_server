@@ -77,7 +77,7 @@ const
 router.post('/upload', upload.any(), function(req, res, next) {
     let files = [],
         filesData = [],
-        fk_site = parseInt(req.body.fk_site);
+        fk_site = parseInt(req.body.fk_site, 10);
 
     if(isNaN(fk_site)) {
         let err = new Error();
@@ -171,7 +171,8 @@ router.get('/upload/f/:n', (req, res, next) => {
  * @param {string} n - название файла
  */
 router.delete('/upload', (req, res, next) => {
-    let files = [];
+    let files = [],
+        fk_site = parseInt(req.body.fk_site, 10);
 
     //преобразование к массиву
     if(!Array.isArray(req.body.files)) {
@@ -180,14 +181,14 @@ router.delete('/upload', (req, res, next) => {
         files = req.body.files;
     }
 
-    if(files.length === 0) {
+    if(files.length === 0 || isNaN(fk_site)) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
         //найти расположение файлов
         upload_files
-            .findPathByNames(files)
+            .findPathByNames(fk_site, files)
             .then(data => {
                 let resPaths = [];
 
@@ -223,7 +224,7 @@ router.get('/upload/list', (req, res, next) => {
     const
         qlimit = parseInt(req.query.limit, 10),
         limit = (qlimit && qlimit < 50) ? qlimit : 50,
-        fk_site = parseInt(req.query.fk_site);
+        fk_site = parseInt(req.query.fk_site, 10);
 
     if(isNaN(fk_site)) {
         let err = new Error();
@@ -232,6 +233,34 @@ router.get('/upload/list', (req, res, next) => {
     } else {
         upload_files
             .findApi(fk_site, limit)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 500;
+                next(err);
+            });
+    }
+});
+
+/**
+ * получить инфо по файлу
+ *
+ * @see upload_files.getInfoFile
+ */
+router.get('/upload/infoFile', (req, res, next) => {
+    const
+        pk_file = parseInt(req.query.pk_file, 10),
+        fk_site = parseInt(req.query.fk_site, 10);
+
+    if(isNaN(fk_site) || isNaN(pk_file)) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        upload_files
+            .getInfoFile(fk_site, pk_file)
             .then(data => {
                 res.send(data);
             })

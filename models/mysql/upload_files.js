@@ -10,6 +10,7 @@ const
     errorlog = require('../../functions').error,
     mime = require('mime-types'),
     async = require('async'),
+    fs = require('fs'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
 
 mysql.formatBind();
@@ -73,7 +74,6 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
  */
 upload_files.findByNameFile = (name_file) => {
     return new Promise((resolve, reject) => {
-        //найти диалоги, в которых состоит пользователь
         mysql
             .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `name_file` = :name_file", {
                 name_file: entities.encode(name_file)
@@ -91,11 +91,12 @@ upload_files.findByNameFile = (name_file) => {
 /**
  * найти пути(и имена в том же порядке) по именам файлов
  *
+ * @param {int} fk_site - ид ресурса
  * @param {Array} name_files - имена файлов
  *
  * @returns {Promise}
  */
-upload_files.findPathByNames = (name_files) => {
+upload_files.findPathByNames = (fk_site, name_files) => {
     let names = [];
 
     for(let i = 0; i < name_files.length; i ++) {
@@ -103,9 +104,9 @@ upload_files.findPathByNames = (name_files) => {
     }
 
     return new Promise((resolve, reject) => {
-        //найти диалоги, в которых состоит пользователь
         mysql
-            .getSqlQuery("SELECT `path`, `name_file` FROM `" + TABLE_NAME + "` WHERE `name_file` IN(:names)", {
+            .getSqlQuery("SELECT `path`, `name_file` FROM `" + TABLE_NAME + "` WHERE `name_file` IN(:names) AND `fk_site` = :fk_site", {
+                fk_site,
                 names
             })
             .then(rows => {
@@ -133,7 +134,6 @@ upload_files.deleteByNames = (name_files) => {
     }
 
     return new Promise((resolve, reject) => {
-        //найти диалоги, в которых состоит пользователь
         mysql
             .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `name_file` IN(:names)", {
                 names
@@ -157,7 +157,6 @@ upload_files.deleteByNames = (name_files) => {
  */
 upload_files.findApi = (fk_site, limit) => {
     return new Promise((resolve, reject) => {
-        //найти диалоги, в которых состоит пользователь
         mysql
             .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `upload_date` DESC LIMIT :limit", {
                 fk_site,
@@ -178,6 +177,53 @@ upload_files.findApi = (fk_site, limit) => {
                     reject();
                 }
             })
+    });
+};
+
+/**
+ * получить инфо по файлу
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {int} pk_file - ид файла
+ *
+ * @returns {Promise}
+ */
+upload_files.getInfoFile = (fk_site, pk_file) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_file` = :pk_file", {
+                fk_site,
+                pk_file
+            })
+            .then(rows => {
+                let row = rows[0],
+                    return_arr = [];
+
+                const filePath = row.path + '/' + row.name_file;
+
+                //проверить наличие файла
+                fs.exists(filePath, (exists) => {
+                    if (exists) {
+                        let stat = fs.statSync(filePath);
+
+                        return_arr.push({
+                            size: stat.size, //bytes
+                            original_name_file: row.original_name_file,
+                            name_file: row.name_file,
+                            upload_date: row.upload_date,
+                            ext: mime.extension(mime.contentType(row.name_file))
+                        });
+
+                        resolve(return_arr);
+                    } else {
+                        reject();
+                    }
+                });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject();
+            });
     });
 };
 
