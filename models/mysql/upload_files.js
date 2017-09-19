@@ -17,21 +17,23 @@ mysql.formatBind();
 /**
  * внесение данных при загрузке файла
  *
+ * @param {int} fk_site - ид ресурса
  * @param {Array} arr_files -
-*            original_name_file(оригинальное имя файла)
+ *           original_name_file(оригинальное имя файла)
              name_file(имя файла на диске)
              path(путь к файлу)
  *
  * @returns {Promise}
  */
-upload_files.onNewFiles = (arr_files) => {
+upload_files.onNewFiles = (fk_site, arr_files) => {
     let farr = [];
 
     for (let i = 0; i < arr_files.length; i++) {
         farr.push(
             function(callback) {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`original_name_file`, `name_file`, `path`) VALUES (:original_name_file, :name_file, :path)", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`) VALUES (:fk_site, :original_name_file, :name_file, :path)", {
+                        fk_site,
                         original_name_file: entities.encode(arr_files[i].original_name_file),
                         name_file: arr_files[i].name_file,
                         path: arr_files[i].path
@@ -153,11 +155,12 @@ upload_files.deleteByNames = (name_files) => {
  *
  * @returns {Promise}
  */
-upload_files.findApi = (limit) => {
+upload_files.findApi = (fk_site, limit) => {
     return new Promise((resolve, reject) => {
         //найти диалоги, в которых состоит пользователь
         mysql
-            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` ORDER BY `upload_date` DESC LIMIT :limit", {
+            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `upload_date` DESC LIMIT :limit", {
+                fk_site,
                 limit
             })
             .then(rows => {
@@ -168,8 +171,12 @@ upload_files.findApi = (limit) => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
-                reject();
+                if(err === EMPTY_SQL) {
+                    resolve([]);
+                } else {
+                    errorlog(err);
+                    reject();
+                }
             })
     });
 };

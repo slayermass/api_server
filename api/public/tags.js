@@ -54,16 +54,22 @@ router.get('/tags', (req, res, next) => {
 
     if(limit > 500) limit = 500;
 
-    tagsModel
-        .getAllBySite(fk_site, limit, offset)
-        .then(data => {
-            res.send(data);
-        })
-        .catch(() => {
-            let err = new Error();
-            err.status = 500;
-            next(err);
-        });
+    if(isNaN(fk_site)) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        tagsModel
+            .getAllBySite(fk_site, limit, offset)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 500;
+                next(err);
+            });
+    }
 });
 
 /**
@@ -75,7 +81,7 @@ router.get('/tags/findByName', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site),
         name = req.query.name || '';
 
-    if(name.length < 1) {
+    if(isNaN(fk_site) && name.length < 1) {
         let err = new Error();
         err.status = 400;
         next(err);

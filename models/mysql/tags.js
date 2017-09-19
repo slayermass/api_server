@@ -119,7 +119,7 @@ tags.findByName = (fk_site, name) => {
             })
             .catch(err => {
                 if(err === EMPTY_SQL) {
-                    resolve();
+                    resolve([]);
                 } else {
                     errorlog(err);
                     reject();

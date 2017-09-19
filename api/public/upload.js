@@ -74,42 +74,49 @@ const
  *      {Bool} success - успешность загрузки
  *      {Array} files  - массив названий файлов
  */
-router.post('/upload', upload.any(), function(req, res) {
-    let files = [];
-    let filesData = [];
+router.post('/upload', upload.any(), function(req, res, next) {
+    let files = [],
+        filesData = [],
+        fk_site = parseInt(req.body.fk_site);
 
-    if(req.files !== undefined) {
-        for (let i = 0; i < req.files.length; i++) {
-            let fpath = req.files[i].path;
-
-            //точная проверка еще раз
-            const buffer = readChunk.sync(fpath, 0, 4100);
-
-            if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
-                fs.unlink(fpath, function (err) {
-                    if (err) throw err;
-                    console.log(fpath + " deleted");
-                });
-            } else {
-                filesData.push({
-                    original_name_file: req.files[i].originalname,
-                    name_file: req.files[i].filename,
-                    path: req.files[i].destination
-                });
-            }
-        }
-
-        //сохранение в бд
-        upload_files
-            .onNewFiles(filesData)
-            .then(files_data => {
-                res.json({success: true, files: files_data});
-            })
-            .catch(err => {
-                res.json({success: false, errors: 'имеются'});
-            });
+    if(isNaN(fk_site)) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
     } else {
-        res.json({success: false});
+        if (req.files !== undefined) {
+            for (let i = 0; i < req.files.length; i++) {
+                let fpath = req.files[i].path;
+
+                //точная проверка еще раз
+                const buffer = readChunk.sync(fpath, 0, 4100);
+
+                if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
+                    fs.unlink(fpath, function (err) {
+                        if (err) throw err;
+                        console.log(fpath + " deleted");
+                    });
+                } else {
+                    filesData.push({
+                        original_name_file: req.files[i].originalname,
+                        name_file: req.files[i].filename,
+                        path: req.files[i].destination
+                    });
+                }
+            }
+
+            //сохранение в бд
+            upload_files
+                .onNewFiles(fk_site, filesData)
+                .then(files_data => {
+                    res.json({success: true, files: files_data});
+                })
+                .catch(err => {
+                    res.json({success: false, errors: 'имеются'});
+                });
+        } else {
+            res.json({success: false});
+        }
     }
 });
 
@@ -215,19 +222,25 @@ router.delete('/upload', (req, res, next) => {
 router.get('/upload/list', (req, res, next) => {
     const
         qlimit = parseInt(req.query.limit, 10),
+        limit = (qlimit && qlimit < 50) ? qlimit : 50,
+        fk_site = parseInt(req.query.fk_site);
 
-        limit = (qlimit && qlimit < 50) ? qlimit : 50;
-
-    upload_files
-        .findApi(limit)
-        .then(data => {
-            res.send(data);
-        })
-        .catch(() => {
-            let err = new Error();
-            err.status = 500;
-            next(err);
-        });
+    if(isNaN(fk_site)) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        upload_files
+            .findApi(fk_site, limit)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 500;
+                next(err);
+            });
+    }
 });
 
 module.exports = router;
