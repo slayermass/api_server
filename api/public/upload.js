@@ -172,19 +172,57 @@ router.get('/upload/f/:n', (req, res, next) => {
  */
 router.delete('/upload', (req, res, next) => {
     let files = [],
+        pk_files = [],
         fk_site = parseInt(req.body.fk_site, 10);
 
-    //преобразование к массиву
-    if(!Array.isArray(req.body.files)) {
+    //преобразование к массиву названия файлов
+    if(req.body.files === undefined) {
+
+    } else if(!Array.isArray(req.body.files)) {
         files.push(req.body.files);
     } else {
         files = req.body.files;
     }
 
-    if(files.length === 0 || isNaN(fk_site)) {
+    //преобразование к массиву ид файлов
+    if(req.body.pk_files === undefined) {
+
+    } else if(!Array.isArray(req.body.pk_files)) {
+        pk_files.push(req.body.pk_files);
+    } else {
+        pk_files = req.body.pk_files;
+    }
+
+    if((pk_files.length === 0 || files.length === 0) && isNaN(fk_site)) {
         let err = new Error();
         err.status = 400;
         next(err);
+    } else if(pk_files.length) {
+        upload_files
+            .findPathByIds(fk_site, pk_files)
+            .then(data => {
+                let resPaths = [];
+
+                //собрать пути
+                for(let i = 0; i < data.length; i ++) {
+                    resPaths.push(data[i].path + '/' + data[i].name_file);
+                }
+
+                //удаление с другого диска
+                del(resPaths, { force: true })
+                    .then(() => {
+                        //удаление из базы
+                        upload_files
+                            .deleteByIds(pk_files);
+
+                        res.json(200);
+                    });
+            })
+            .catch(() => {
+                let err = new Error();
+                err.status = 404;
+                next(err);
+            });
     } else {
         //найти расположение файлов
         upload_files

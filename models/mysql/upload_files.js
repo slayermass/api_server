@@ -89,6 +89,37 @@ upload_files.findByNameFile = (name_file) => {
 };
 
 /**
+ * найти пути(и имена в том же порядке) по ид файлов
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {Array} pk_files - ид файлов
+ *
+ * @returns {Promise}
+ */
+upload_files.findPathByIds = (fk_site, pk_files) => {
+    let names = [];
+
+    for(let i = 0; i < pk_files.length; i ++) {
+        names.push(parseInt(pk_files[i], 10));
+    }
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `path`, `name_file` FROM `" + TABLE_NAME + "` WHERE `pk_file` IN(:pk_files) AND `fk_site` = :fk_site", {
+                fk_site,
+                pk_files: names
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject();
+            });
+    });
+};
+
+/**
  * найти пути(и имена в том же порядке) по именам файлов
  *
  * @param {int} fk_site - ид ресурса
@@ -137,6 +168,35 @@ upload_files.deleteByNames = (name_files) => {
         mysql
             .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `name_file` IN(:names)", {
                 names
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject();
+            })
+    });
+};
+
+/**
+ * удаление файлов
+ *
+ * @param {Array} pk_files - ид файлов
+ *
+ * @returns {Promise}
+ */
+upload_files.deleteByIds = (pk_files) => {
+    let names = [];
+
+    for(let i = 0; i < pk_files.length; i ++) {
+        names.push(entities.encode(pk_files[i]));
+    }
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_file` IN(:pk_files)", {
+                pk_files: names
             })
             .then(rows => {
                 resolve(rows);
