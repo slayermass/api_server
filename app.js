@@ -18,7 +18,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'protected')));
 app.use(compression());
 app.disable('x-powered-by');
 app.use(bodyParser.json());
@@ -28,7 +28,8 @@ app.get('/', function(req, res){//загрузчик многих фото
     res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
-app.use('/api', require('./api/public'));//публичное api
+app.use('/api', require('./api/protected'));//закрытое api
+app.use('/papi', require('./api/public'));//публичное api
 
 app.use(function (req, res, next) {
     let err = new Error('Not Found');
