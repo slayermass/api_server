@@ -23,6 +23,7 @@
     "mysql": "^2.14.1",
     "path-exists": "^3.0.0",
     "read-chunk": "^2.1.0",
-    "request-ip": "^2.0.2"
+    "request-ip": "^2.0.2",
+    "transliteration": "^1.6.2"
   }
 }

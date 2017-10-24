@@ -8,4 +8,6 @@ router.use(require('./tags'));
 
 router.use(require('./sites'));
 
+router.use(require('./content'));
+
 module.exports = router;
