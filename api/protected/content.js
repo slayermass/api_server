@@ -2,6 +2,66 @@ const router = require('express').Router(),
     contentModel = require('../../models/mysql/content');
 
 /**
+ * получение контента по ид
+ *
+ * @see contentModel.findOne
+ */
+router.get('/contentone', (req, res, next) => {
+    let fk_site = parseInt(req.query.fk_site, 10),
+        pk_content = parseInt(req.query.pk_content, 10);
+
+    if (isNaN(fk_site) || fk_site < 1 || isNaN(pk_content) || pk_content < 1) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        contentModel
+            .findOne(pk_content, fk_site)
+            .then(data => {
+                res.send({
+                    data
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
+    }
+});
+
+/**
+ * получение контента
+ *
+ * @see contentModel.find
+ */
+router.get('/content', (req, res, next) => {
+    let limit = parseInt(req.query.limit, 10) || 20,
+        fk_site = parseInt(req.query.fk_site, 10),
+        isdeleted = parseInt(req.query.isdeleted, 10),
+        orderby = (req.query.orderby) ? req.query.orderby : 'pk_content DESC';
+
+    if (isNaN(fk_site) || fk_site < 1) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        contentModel
+            .find(fk_site, {
+                limit,
+                orderby,
+                isdeleted
+            })
+            .then(data => {
+                res.send({
+                    data
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
+    }
+});
+
+/**
  * создание контента
  *
  * @see contentModel.save
@@ -13,7 +73,8 @@ router.post('/content', (req, res, next) => {
             tags: req.body.content.tags,
             status_content: parseInt(req.body.content.status, 10),
             fk_user_created: parseInt(req.body.content.fk_user_created, 10),
-            headimgsrc_content: req.body.content.head_img_src
+        headimgsrc_content: req.body.content.head_img_src,
+        pk_content: parseInt(req.body.content.pk_content, 10)
         };
     let fk_site = parseInt(req.body.fk_site, 10);
 
@@ -21,12 +82,24 @@ router.post('/content', (req, res, next) => {
     if(content.title_content.length < 1 ||
         content.text_content.length < 1 ||
         (isNaN(content.fk_user_created) || content.fk_user_created < 1) ||
-        fk_site < 1
+        (isNaN(fk_site) || fk_site < 1)
     ) {
         let err = new Error();
         err.status = 400;
         next(err);
-    } else {
+    } else if (content.pk_content) { //редактирование
+        contentModel
+            .update(content, fk_site)
+            .then(data => {
+                res.send({
+                    success: true,
+                    pk_content: data.pk_content
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
+    } else { // сохранение
         contentModel
             .save(content, fk_site)
             .then(data => {

@@ -11,7 +11,8 @@ const
 mysql.formatBind();
 
 /**
- * сохранение связей контент-теги
+ * удаление старых и сохранение связей контент-теги
+ * удалять и перезаписывать можно спокойно
  *
  * @param {int} fk_content - ид контента
  * @param {Array} fk_tags - ид тегов
@@ -23,13 +24,25 @@ model.save = (fk_content, fk_tags) => {
         idata.push([fk_content, fk_tags[i]]);
     }
 
-    mysql.formatInit();
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_content`, `fk_tag`) VALUES ?", [idata])
-            .then(data => {
-                resolve(data);
-                mysql.formatBind();
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `fk_content` = :fk_content;", {
+                fk_content
+            })
+            .then(() => {
+                mysql.formatInit();
+
+                mysql
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_content`, `fk_tag`) VALUES ?", [idata])
+                    .then(data => {
+                        resolve(data);
+                        mysql.formatBind();
+                    })
+                    .catch(err => {
+                        errorlog(err);
+                        reject(err);
+                        mysql.formatBind();
+                    });
             })
             .catch(err => {
                 errorlog(err);
