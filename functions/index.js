@@ -5,9 +5,22 @@ const fs = require('fs'),
 /**
  * логирование общее
  *
- * @param err - описание ошибки
+ * @param {String} err - описание ошибки
  */
 module.exports.error = (err) => {
     logger.error(err);
     console.log(err);
-}
+};
+
+/**
+ * вернуть гарантированный массив
+ *
+ * @param {String|number} param - любое значение
+ */
+module.exports.doArray = (param) => {
+    if (!Array.isArray(param)) {
+        param = [param];
+    }
+
+    return param;
+};

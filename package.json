@@ -19,6 +19,7 @@
     "file-type": "^6.1.0",
     "formidable": "^1.0.17",
     "html-entities": "^1.2.1",
+    "is-empty": "^1.2.0",
     "log": "^1.4.0",
     "mime-types": "^2.1.17",
     "moment": "^2.19.1",

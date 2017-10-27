@@ -1,4 +1,5 @@
 const router = require('express').Router(),
+    functions = require('../../functions'),
     contentModel = require('../../models/mysql/content');
 
 /**
@@ -25,6 +26,33 @@ router.get('/contentone', (req, res, next) => {
             .catch(err => {
                 next(err);
             });
+    }
+});
+
+/**
+ * удаление контента по ид
+ *
+ * @see contentModel.delete
+ */
+router.delete('/content', (req, res, next) => {
+    let delArr = functions.doArray(req.body.delArr);
+
+    if (delArr.length) {
+        contentModel
+            .delete(delArr)
+            .then(count => {
+                res.send({
+                    success: true,
+                    count
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
+    } else {
+        let err = new Error();
+        err.status = 400;
+        next(err);
     }
 });
 

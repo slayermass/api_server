@@ -13,6 +13,7 @@ const
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
     tagsmodel = require('./tags'),
     moment = require('moment'),
+    empty = require('is-empty'),
     r_content_to_tagsmodel = require('./r_content_to_tags');
 
 mysql.formatBind();
@@ -65,19 +66,42 @@ model.findOne = (pk_content, fk_site) => {
                 return reject(err);
             }
 
-            //собрать в однотипное представление данных
-            results.content_data.tags = [];
+            //если есть данные - собрать в однотипное представление данных
+            if (!empty(results.content_data)) {
+                results.content_data.tags = [];
 
-            for (let i = 0; i < results.content_tags.length; i++) {
-                results.content_data.tags.push({
-                    id: results.content_tags[i].pk_tag,
-                    label: results.content_tags[i].name_tag
-                });
+                for (let i = 0; i < results.content_tags.length; i++) {
+                    results.content_data.tags.push({
+                        id: results.content_tags[i].pk_tag,
+                        label: results.content_tags[i].name_tag
+                    });
+                }
             }
 
             resolve(results.content_data);
         });
     });
+};
+
+/**
+ * удаление контента по ид
+ *
+ * @param {Array} delArr - массив ид контента
+ */
+model.delete = (delArr) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_content` IN(" + delArr.join(',') + ")", {})
+            .then(rows => {
+                resolve({
+                    deleted: rows.affectedRows
+                });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    })
 };
 
 /**
