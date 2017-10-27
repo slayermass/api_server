@@ -4,9 +4,11 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon -e '.js' app.js"
+    "startdev": "nodemon -e '.js' app.js",
+    "start": "pm2 start app.js -i max",
+    "stop": "pm2 delete all"
   },
-  "author": "Fady Makram",
+  "author": "slayermass",
   "license": "MIT",
   "dependencies": {
     "async": "^2.5.0",

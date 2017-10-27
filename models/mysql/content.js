@@ -144,7 +144,7 @@ model.update = (cobj, fk_site) => {
             })
             .then(row => {
                 model
-                    .checkUniqSlug(slug, [row[0].slug_content])
+                    .checkUniqSlug(slug, fk_site, [row[0].slug_content])
                     .then(slug => {
 
                         mysql
@@ -244,7 +244,7 @@ model.save = (cobj, fk_site) => {
     return new Promise((resolve, reject) => {
         //сохранение контента
         model
-            .checkUniqSlug(slug)
+            .checkUniqSlug(slug, fk_site)
             .then(slug => {
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`)" +
@@ -278,15 +278,18 @@ model.save = (cobj, fk_site) => {
 /**
  * проверка и создание уникального слага
  *
- * @param {String} slug - слаг для сохранения
+ * @param {String} slug         - слаг для сохранения
+ * @param {int} fk_site         - ид сайта(уникальный в рамках сайта)
+ * @param {Array} ignored_slugs - слаги для игнора(например при сохранении проверять все, но не сохраняемый) необяз
  */
-model.checkUniqSlug = (slug, ignored_slugs = []) => {
+model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
     let ignore_slugs = ignored_slugs.join(',');
 
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
-                ignore_slugs
+            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
+                ignore_slugs,
+                fk_site
             })
             .then(rows => {
                 let uniqnum = 0;
