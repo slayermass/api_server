@@ -112,30 +112,70 @@ model.delete = (delArr) => {
  *      @param {int} limit      - кол-во записей для поиска
  *      @param {int} orderby    - сортировка
  *      @param {int} isdeleted  - выводить удаленные(0 - нет, 1 - да, -1 - все)
+ * @param {int} withcount       - включить ли вывод кол-ва записей
  */
-model.find = (fk_site, params) => {
+model.find = (fk_site, params, withcount) => {
     return new Promise((resolve, reject) => {
-        mysql
-            .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `create_date`, `update_date`, `fk_user_created`, `fk_user_updated`, `status_content`, `isdeleted` " +
-                "FROM `" + TABLE_NAME + "` " +
-                "WHERE `fk_site` = :fk_site AND `isdeleted` = :isdeleted " +
-                "ORDER BY " + params.orderby + " LIMIT :limit"
-                , {
-                    fk_site,
-                    limit: params.limit,
-                    isdeleted: params.isdeleted
-                })
-            .then(rows => {
-                resolve(rows);
-            })
-            .catch(err => {
-                if (err === EMPTY_SQL) {
-                    resolve({});
+        async.parallel({
+            content_data: (callback) => { //основная инфа
+                mysql
+                    .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `create_date`, `update_date`, `fk_user_created`, `fk_user_updated`, `status_content`, `isdeleted` " +
+                        "FROM `" + TABLE_NAME + "` " +
+                        "WHERE `fk_site` = :fk_site AND `isdeleted` = :isdeleted " +
+                        "ORDER BY " + params.orderby + " LIMIT :limit"
+                        , {
+                            fk_site,
+                            limit: params.limit,
+                            isdeleted: params.isdeleted
+                        })
+                    .then(rows => {
+                        callback(null, rows);
+                    })
+                    .catch(err => {
+                        if (err === EMPTY_SQL) {
+                            callback(null, {});
+                        } else {
+                            callback(err);
+                        }
+                    });
+            },
+            content_count: (callback) => { //кол-во записей
+                if (withcount === 1) {
+                    mysql
+                        .getSqlQuery("SELECT COUNT(*) AS count, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `isdeleted` = :isdeleted) AS countall, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2 " +
+                            "FROM `" + TABLE_NAME + "`"
+                            , {
+                                fk_site,
+                                isdeleted: params.isdeleted
+                            })
+                        .then(row => {
+                            callback(null, {
+                                countall: row[0].countall,
+                                countstatus1: row[0].countstatus1,
+                                countstatus2: row[0].countstatus2
+                            });
+                        })
+                        .catch(err => {
+                            callback(err);
+                        });
                 } else {
-                    errorlog(err);
-                    reject(err);
+                    callback(null, {});
                 }
+            }
+        }, (err, results) => {
+            if (err) {
+                errorlog(err);
+                return reject(err);
+            }
+
+            resolve({
+                data: results.content_data,
+                count: results.content_count
             });
+        });
     });
 };
 
