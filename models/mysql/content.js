@@ -110,23 +110,39 @@ model.delete = (delArr) => {
  * @param {int} fk_site         - ид сайта
  * @param {Object} params       - параметры
  *      @param {int} limit      - кол-во записей для поиска
+ *      @param {int} offset     - отступ для поиска
  *      @param {int} orderby    - сортировка
  *      @param {int} isdeleted  - выводить удаленные(0 - нет, 1 - да, -1 - все)
+ *      @param {int} status     - статус контента
  * @param {int} withcount       - включить ли вывод кол-ва записей
  */
 model.find = (fk_site, params, withcount) => {
+    let add_where = '';
+
+    //указан статус
+    if (params.status !== 0) {
+        add_where += ' AND `status_content` = :status_content';
+    }
+
+    //указан удаленность контента
+    if (params.isdeleted !== -1) {
+        add_where += ' AND `isdeleted` = :isdeleted';
+    }
+
     return new Promise((resolve, reject) => {
         async.parallel({
             content_data: (callback) => { //основная инфа
                 mysql
                     .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `create_date`, `update_date`, `fk_user_created`, `fk_user_updated`, `status_content`, `isdeleted` " +
                         "FROM `" + TABLE_NAME + "` " +
-                        "WHERE `fk_site` = :fk_site AND `isdeleted` = :isdeleted " +
-                        "ORDER BY " + params.orderby + " LIMIT :limit"
+                        "WHERE `fk_site` = :fk_site " + add_where +
+                        " ORDER BY " + params.orderby + " LIMIT :limit OFFSET :offset"
                         , {
                             fk_site,
                             limit: params.limit,
-                            isdeleted: params.isdeleted
+                            isdeleted: params.isdeleted,
+                            status_content: params.status,
+                            offset: params.offset
                         })
                     .then(rows => {
                         callback(null, rows);
@@ -143,13 +159,11 @@ model.find = (fk_site, params, withcount) => {
                 if (withcount === 1) {
                     mysql
                         .getSqlQuery("SELECT COUNT(*) AS count, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `isdeleted` = :isdeleted) AS countall, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countall, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2 " +
-                            "FROM `" + TABLE_NAME + "`"
-                            , {
-                                fk_site,
-                                isdeleted: params.isdeleted
+                            "FROM `" + TABLE_NAME + "`", {
+                            fk_site
                             })
                         .then(row => {
                             callback(null, {
