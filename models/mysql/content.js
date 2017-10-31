@@ -200,6 +200,7 @@ model.find = (fk_site, params, withcount) => {
  * @param {Object} cobj
  *      @param {String} title_content       - заголовок
  *      @param {String} text_content        - содержимое
+ *      @param {String} intro_content       - краткое содержимое(введение)
  *      @param {Array}  tags                - теги
  *      @param {int}    status_content      - статус
  *      @param {int}    fk_user_created     - ид создателя
@@ -212,7 +213,12 @@ model.update = (cobj, fk_site) => {
 
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.text_content = entities.encode(cobj.text_content);
+    cobj.intro_content = entities.encode(cobj.intro_content);
     cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
+
+    if (cobj.intro_content.length === 0) {
+        cobj.intro_content = null;
+    }
 
     return new Promise((resolve, reject) => {
         mysql
@@ -228,11 +234,12 @@ model.update = (cobj, fk_site) => {
                         mysql
                             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content, `slug_content` = :slug, " +
                                 "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
-                                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date " +
+                                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content " +
                                 "WHERE `pk_content` = :pk_content"
                                 , {
                                     title_content: cobj.title_content,
                                     slug,
+                                    intro_content: cobj.intro_content,
                                     text_content: cobj.text_content,
                                     headimgsrc_content: cobj.headimgsrc_content,
                                     status_content: cobj.status_content,
@@ -306,6 +313,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  * @param {Object} cobj
  *      @param {String} title_content       - заголовок
  *      @param {String} text_content        - содержимое
+ *      @param {String} intro_content       - краткое содержимое(введение)
  *      @param {Array}  tags                - теги
  *      @param {int}    status_content      - статус
  *      @param {int}    fk_user_created     - ид создателя
@@ -317,7 +325,12 @@ model.save = (cobj, fk_site) => {
 
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.text_content = entities.encode(cobj.text_content);
+    cobj.intro_content = entities.encode(cobj.intro_content);
     cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
+
+    if (cobj.intro_content.length === 0) {
+        cobj.intro_content = null;
+    }
 
     return new Promise((resolve, reject) => {
         //сохранение контента
@@ -325,11 +338,12 @@ model.save = (cobj, fk_site) => {
             .checkUniqSlug(slug, fk_site)
             .then(slug => {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`)" +
-                        " VALUES (:title_content, :slug, :headimgsrc_content, :text_content, :fk_site, :status_content, :fk_user_created);", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`)" +
+                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content, :fk_site, :status_content, :fk_user_created);", {
                         title_content: cobj.title_content,
                         slug,
                         text_content: cobj.text_content,
+                        intro_content: cobj.intro_content,
                         headimgsrc_content: cobj.headimgsrc_content,
                         fk_site,
                         status_content: cobj.status_content,

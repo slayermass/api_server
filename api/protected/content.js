@@ -93,20 +93,22 @@ router.get('/content', (req, res, next) => {
 });
 
 /**
- * создание контента
+ * создание/обновление контента
  *
  * @see contentModel.save
  */
 router.post('/content', (req, res, next) => {
     let content= {
-            title_content: req.body.content.title,
-            text_content: req.body.content.text,
-            tags: req.body.content.tags,
-            status_content: parseInt(req.body.content.status, 10),
-            fk_user_created: parseInt(req.body.content.fk_user_created, 10),
+        title_content: req.body.content.title,
+        text_content: req.body.content.text,
+        intro_content: req.body.content.intro,
+        tags: req.body.content.tags,
+        status_content: parseInt(req.body.content.status, 10),
+        fk_user_created: parseInt(req.body.content.fk_user_created, 10),
         headimgsrc_content: req.body.content.head_img_src,
         pk_content: parseInt(req.body.content.pk_content, 10)
-        };
+    };
+
     let fk_site = parseInt(req.body.fk_site, 10);
 
     //проверка
