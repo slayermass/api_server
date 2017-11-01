@@ -10,4 +10,6 @@ router.use(require('./sites'));
 
 router.use(require('./content'));
 
+router.use(require('./menu_items'));
+
 module.exports = router;

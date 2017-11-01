@@ -10,7 +10,8 @@ const router = require('express').Router(),
  * @returns {Array} {"pk_tag": {int},"name_tag": {String}},
  */
 router.post('/tags', (req, res, next) => {
-    let tags = [], fk_site = parseInt(req.body.fk_site);
+    let tags = [],
+        fk_site = parseInt(req.body.fk_site, 10);
 
     if(Array.isArray(req.body.tags)) {
         for(let i = 0; i < req.body.tags.length; i++) {

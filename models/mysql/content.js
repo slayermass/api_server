@@ -101,7 +101,7 @@ model.delete = (delArr) => {
                 errorlog(err);
                 reject(err);
             });
-    })
+    });
 };
 
 /**
