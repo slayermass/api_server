@@ -41,4 +41,31 @@ model.findAll = (fk_site) => {
     });
 };
 
+/**
+ * сохранить пункт меню
+ *
+ * @param {int} fk_site - ид сайта
+ * @param {Object} menu_item -
+ */
+model.saveOne = (fk_site, menu_item) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_menu_item`, `name_menu_item`, `path_menu_item`, `isactive`" +
+                " FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site", {
+                fk_site
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                if (err === EMPTY_SQL) {
+                    resolve({});
+                } else {
+                    errorlog(err);
+                    reject(err);
+                }
+            });
+    });
+};
+
 module.exports = model;

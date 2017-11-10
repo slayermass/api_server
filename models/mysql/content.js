@@ -159,7 +159,7 @@ model.find = (fk_site, params, withcount) => {
                 if (withcount === 1) {
                     mysql
                         .getSqlQuery("SELECT COUNT(*) AS count, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countall, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countstatus0, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2 " +
                             "FROM `" + TABLE_NAME + "`", {
@@ -167,7 +167,7 @@ model.find = (fk_site, params, withcount) => {
                             })
                         .then(row => {
                             callback(null, {
-                                countall: row[0].countall,
+                                countstatus0: row[0].countstatus0,
                                 countstatus1: row[0].countstatus1,
                                 countstatus2: row[0].countstatus2
                             });
