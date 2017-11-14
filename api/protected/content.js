@@ -68,7 +68,8 @@ router.get('/content', (req, res, next) => {
         status = parseInt(req.query.status, 10) || 0,
         orderby = (req.query.orderby) ? req.query.orderby : 'pk_content DESC',
         withcount = parseInt(req.query.withcount, 10) || 0,
-        offset = parseInt(req.query.offset, 10) || 0;
+        offset = parseInt(req.query.offset, 10) || 0,
+        search = req.query.search || {};
 
     if (isNaN(fk_site) || fk_site < 1) {
         let err = new Error();
@@ -82,7 +83,7 @@ router.get('/content', (req, res, next) => {
                 isdeleted,
                 status,
                 offset
-            }, withcount)
+            }, search, withcount)
             .then(data => {
                 res.send(data);
             })

@@ -114,9 +114,10 @@ model.delete = (delArr) => {
  *      @param {int} orderby    - сортировка
  *      @param {int} isdeleted  - выводить удаленные(0 - нет, 1 - да, -1 - все)
  *      @param {int} status     - статус контента
- * @param {int} withcount       - включить ли вывод кол-ва записей
+ * @param {Object} search       - пользовательский поиск по параметрам {val: значение, type: тип поля}
+ * @param {int} withcount       - включить ли вывод кол-ва записей}
  */
-model.find = (fk_site, params, withcount) => {
+model.find = (fk_site, params, search, withcount) => {
     let add_where = '';
 
     //указан статус
@@ -127,6 +128,15 @@ model.find = (fk_site, params, withcount) => {
     //указан удаленность контента
     if (params.isdeleted !== -1) {
         add_where += ' AND `isdeleted` = :isdeleted';
+    }
+
+    //поиск по параметрам, условие поиска от типа поля
+    for (let attr in search) {
+        if (search[attr].type === 'integer') {
+            add_where += ` AND \`${attr}\` = ${search[attr].val}`;
+        } else {
+            add_where += ` AND \`${attr}\` LIKE '%${entities.encode(search[attr].val)}%'`;
+        }
     }
 
     return new Promise((resolve, reject) => {
