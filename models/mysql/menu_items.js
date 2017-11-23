@@ -42,28 +42,81 @@ model.findAll = (fk_site) => {
 };
 
 /**
- * сохранить пункт меню
+ * редактирова пункт меню
  *
  * @param {int} fk_site - ид сайта
  * @param {Object} menu_item -
  */
-model.saveOne = (fk_site, menu_item) => {
+model.updateOne = (fk_site, menu_item) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_menu_item`, `name_menu_item`, `path_menu_item`, `isactive`" +
-                " FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site", {
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "`" +
+                " SET `name_menu_item` = :name_menu_item, `path_menu_item` = :path_menu_item, `isactive` = :isactive" +
+                " WHERE `pk_menu_item` = :pk_menu_item AND `fk_site` = :fk_site;", {
+                pk_menu_item: menu_item.pk_menu_item,
+                name_menu_item: menu_item.name_menu_item,
+                path_menu_item: menu_item.path_menu_item,
+                isactive: menu_item.isactive,
                 fk_site
             })
-            .then(rows => {
-                resolve(rows);
+            .then(() => {
+                resolve(true);
             })
             .catch(err => {
-                if (err === EMPTY_SQL) {
-                    resolve({});
-                } else {
-                    errorlog(err);
-                    reject(err);
-                }
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
+ * создать пункт меню
+ *
+ * @param {int} fk_site - ид сайта
+ * @param {Object} menu_item -
+ */
+model.createOne = (fk_site, menu_item) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`name_menu_item`, `path_menu_item`, `isactive`, `fk_site`) " +
+                "VALUES (:name_menu_item, :path_menu_item, :isactive, :fk_site);", {
+                name_menu_item: menu_item.name_menu_item,
+                path_menu_item: menu_item.path_menu_item,
+                isactive: menu_item.isactive,
+                fk_site
+            })
+            .then(row => {
+                resolve({
+                    id: row.insertId,
+                    isnew: true
+                });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
+ * удалить пункт меню
+ *
+ * @param {int} fk_site      - ид сайта
+ * @param {int} pk_menu_item - ид пункта
+ */
+model.deleteOne = (fk_site, pk_menu_item) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_menu_item` = :pk_menu_item AND `fk_site` = :fk_site;", {
+                pk_menu_item,
+                fk_site
+            })
+            .then(() => {
+                resolve(true);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
             });
     });
 };
