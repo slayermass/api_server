@@ -14,7 +14,8 @@ const
     tagsmodel = require('./tags'),
     moment = require('moment'),
     empty = require('is-empty'),
-    r_content_to_tagsmodel = require('./r_content_to_tags');
+    r_content_to_tagsmodel = require('./r_content_to_tags'),
+    addWhere = require('../../functions').addWhere;
 
 mysql.formatBind();
 
@@ -118,7 +119,7 @@ model.delete = (delArr) => {
  * @param {int} withcount       - включить ли вывод кол-ва записей}
  */
 model.find = (fk_site, params, search, withcount) => {
-    let add_where = '';
+    let add_where = addWhere(search);
 
     //указан статус
     if (params.status !== 0) {
@@ -128,15 +129,6 @@ model.find = (fk_site, params, search, withcount) => {
     //указан удаленность контента
     if (params.isdeleted !== -1) {
         add_where += ' AND `isdeleted` = :isdeleted';
-    }
-
-    //поиск по параметрам, условие поиска от типа поля
-    for (let attr in search) {
-        if (search[attr].type === 'integer') {
-            add_where += ` AND \`${attr}\` = ${search[attr].val}`;
-        } else {
-            add_where += ` AND \`${attr}\` LIKE '%${entities.encode(search[attr].val)}%'`;
-        }
     }
 
     return new Promise((resolve, reject) => {
