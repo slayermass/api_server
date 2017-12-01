@@ -38,7 +38,7 @@ model.findAll = (fk_site, limit, offset, search) => {
         async.parallel({
             data: (callback) => { //основная инфа
                 mysql
-                    .getSqlQuery("SELECT `pk_menu`, `name_menu` FROM `" + TABLE_NAME + "`" +
+                    .getSqlQuery("SELECT `pk_menu`, `name_menu`, `label_menu` FROM `" + TABLE_NAME + "`" +
                         " WHERE `fk_site` = :fk_site " + add_where + " LIMIT :limit OFFSET :offset", {
                         fk_site,
                         limit,
@@ -95,7 +95,7 @@ model.findAll = (fk_site, limit, offset, search) => {
 model.findOne = (fk_site, pk_menu) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `name_menu` FROM `" + TABLE_NAME + "`" +
+            .getSqlQuery("SELECT `name_menu`, `label_menu` FROM `" + TABLE_NAME + "`" +
                 " WHERE `fk_site` = :fk_site AND `pk_menu` = :pk_menu", {
                 fk_site,
                 pk_menu
@@ -123,10 +123,11 @@ model.findOne = (fk_site, pk_menu) => {
 model.updateOne = (fk_site, menu) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `name_menu` = :name_menu" +
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `name_menu` = :name_menu, `label_menu` = :label_menu" +
                 " WHERE `fk_site` = :fk_site AND `pk_menu` = :pk_menu", {
                 fk_site,
-                name_menu: menu.name_menu,
+                name_menu: entities.encode(menu.name_menu),
+                label_menu: entities.encode(menu.label_menu),
                 pk_menu: menu.pk_menu
             })
             .then(() => {
@@ -148,8 +149,9 @@ model.updateOne = (fk_site, menu) => {
 model.createOne = (fk_site, menu) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`name_menu`, `fk_site`) VALUES (:name_menu, :fk_site);", {
-                name_menu: menu.name_menu,
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`name_menu`, `fk_site`, `label_menu`) VALUES (:name_menu, :fk_site, :label_menu);", {
+                name_menu: entities.encode(menu.name_menu),
+                label_menu: entities.encode(menu.label_menu),
                 fk_site
             })
             .then(() => {

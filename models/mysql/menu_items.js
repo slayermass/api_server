@@ -19,19 +19,31 @@ mysql.formatBind();
 /**
  * find menu items with their sorting
  *
- * @param {int} fk_site - id site
- * @param {int} pk_menu - pk parent menu
+ * @param {int} fk_site         - id site
+ * @param {int} pk_menu         - pk parent menu
+ * @param {String} label_menu   - label parent menu(should be unique)
  */
-model.findAll = (fk_site, pk_menu) => {
+model.findAll = (fk_site, pk_menu, label_menu) => {
+    let condition = '';
+
+    if (!empty(label_menu)) { // search by label
+        condition = '`label_menu` = :label_menu';
+    } else if (!isNaN(fk_site) & fk_site >= 1) { // search by pk
+        condition = '`pk_menu` = :pk_menu';
+    } else {
+        return;
+    }
+
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_menu_item`, `name_menu_item`, `path_menu_item`, `isactive`" +
                 " FROM `" + TABLE_NAME + "`" +
                 " LEFT JOIN `" + MENU_TABLE_NAME + "` ON " + MENU_TABLE_NAME + ".pk_menu = " + TABLE_NAME + ".fk_menu" +
-                " WHERE `fk_site` = :fk_site AND `pk_menu` = :pk_menu" +
+                " WHERE `fk_site` = :fk_site AND " + condition +
                 " ORDER BY `sort`", {
                 fk_site,
-                pk_menu
+                pk_menu,
+                label_menu: entities.encode(label_menu)
             })
             .then(rows => {
                 resolve(rows);
