@@ -135,7 +135,7 @@ model.find = (fk_site, params, search, withcount) => {
         async.parallel({
             content_data: (callback) => { //основная инфа
                 mysql
-                    .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `create_date`, `update_date`, `fk_user_created`, `fk_user_updated`, `status_content`, `isdeleted` " +
+                    .getSqlQuery("SELECT `pk_content`, `headimgsrc_content`, `title_content`, `slug_content`, `create_date`, `update_date`, `fk_user_created`, `fk_user_updated`, `status_content`, `isdeleted` " +
                         "FROM `" + TABLE_NAME + "` " +
                         "WHERE `fk_site` = :fk_site " + add_where +
                         " ORDER BY " + params.orderby + " LIMIT :limit OFFSET :offset"
