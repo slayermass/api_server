@@ -66,6 +66,32 @@ const
     });
 
 /**
+ * добавление файла в библиотеку по ссылке
+ *
+ * @see upload_files.newByLink
+ */
+router.post('/upload_link', (req, res, next) => {
+    let name = req.body.name,
+        link = req.body.link,
+        fk_site = parseInt(req.body.fk_site, 10);
+
+    if ((isNaN(fk_site) || fk_site < 1) || link.length < 5) {
+        let err = new Error();
+        err.status = 400;
+        next(err);
+    } else {
+        upload_files
+            .newByLink(fk_site, link, name)
+            .then(files_data => {
+                res.json({success: true, files: files_data});
+            })
+            .catch(err => {
+                res.json({success: false, errors: 'имеются'});
+            });
+    }
+});
+
+/**
  * загрузка файлов
  *
  * @param {Array} files - массив файлов для загрузки
@@ -79,7 +105,7 @@ router.post('/upload', upload.any(), function(req, res, next) {
         filesData = [],
         fk_site = parseInt(req.body.fk_site, 10);
 
-    if(isNaN(fk_site)) {
+    if (isNaN(fk_site) || fk_site < 1) {
         let err = new Error();
         err.status = 400;
         next(err);
@@ -111,7 +137,7 @@ router.post('/upload', upload.any(), function(req, res, next) {
                 .then(files_data => {
                     res.json({success: true, files: files_data});
                 })
-                .catch(err => {
+                .catch(() => {
                     res.json({success: false, errors: 'имеются'});
                 });
         } else {

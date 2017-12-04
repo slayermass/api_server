@@ -33,7 +33,8 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
         farr.push(
             function(callback) {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`) VALUES (:fk_site, :original_name_file, :name_file, :path)", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`)" +
+                        " VALUES (:fk_site, :original_name_file, :name_file, :path)", {
                         fk_site,
                         original_name_file: entities.encode(arr_files[i].original_name_file),
                         name_file: arr_files[i].name_file,
@@ -62,6 +63,38 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
             if(err) reject();
             resolve(results);
         });
+    });
+};
+
+/**
+ * добавление файла в библиотеку по ссылке
+ *
+ * @param {int} fk_site        - ид ресурса
+ * @param {String} path        - ссылка на файл
+ * @param {String} original_name_file   - название(опционально)
+ */
+upload_files.newByLink = (fk_site, path, original_name_file) => {
+    if (original_name_file.length < 1) {
+        original_name_file = 'noname';
+    }
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `path`, `link`) " +
+                "VALUES (:fk_site, :original_name_file, :path, :link)", {
+                fk_site,
+                path: null,
+                original_name_file: entities.encode(original_name_file),
+                link: entities.encode(path),
+                upload_date: new Date().toISOString()
+            })
+            .then(row => {
+                resolve(row[0]);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject();
+            })
     });
 };
 
@@ -218,7 +251,9 @@ upload_files.deleteByIds = (pk_files) => {
 upload_files.findApi = (fk_site, limit) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `upload_date` DESC LIMIT :limit", {
+            .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date`, `link` " +
+                "FROM `" + TABLE_NAME + "` " +
+                "WHERE `fk_site` = :fk_site ORDER BY `upload_date` DESC LIMIT :limit", {
                 fk_site,
                 limit
             })
