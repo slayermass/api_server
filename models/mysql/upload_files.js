@@ -294,26 +294,38 @@ upload_files.getInfoFile = (fk_site, pk_file) => {
                 let row = rows[0],
                     return_arr = [];
 
-                const filePath = row.path + '/' + row.name_file;
+                if (row.path === null) {
+                    return_arr.push({
+                        size: 0, //bytes
+                        original_name_file: row.original_name_file,
+                        name_file: row.name_file,
+                        upload_date: row.upload_date,
+                        ext: ''
+                    });
 
-                //проверить наличие файла
-                fs.exists(filePath, (exists) => {
-                    if (exists) {
-                        let stat = fs.statSync(filePath);
+                    resolve(return_arr);
+                } else {
+                    const filePath = row.path + '/' + row.name_file;
 
-                        return_arr.push({
-                            size: stat.size, //bytes
-                            original_name_file: row.original_name_file,
-                            name_file: row.name_file,
-                            upload_date: row.upload_date,
-                            ext: mime.extension(mime.contentType(row.name_file))
-                        });
+                    //проверить наличие файла
+                    fs.exists(filePath, (exists) => {
+                        if (exists) {
+                            let stat = fs.statSync(filePath);
 
-                        resolve(return_arr);
-                    } else {
-                        reject();
-                    }
-                });
+                            return_arr.push({
+                                size: stat.size, //bytes
+                                original_name_file: row.original_name_file,
+                                name_file: row.name_file,
+                                upload_date: row.upload_date,
+                                ext: mime.extension(mime.contentType(row.name_file))
+                            });
+
+                            resolve(return_arr);
+                        } else {
+                            reject();
+                        }
+                    });
+                }
             })
             .catch(err => {
                 errorlog(err);
