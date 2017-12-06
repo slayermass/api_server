@@ -9,15 +9,19 @@ const router = require('express').Router(),
  */
 router.get('/contentone', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site, 10),
-        pk_content = parseInt(req.query.pk_content, 10);
+        pk_content = parseInt(req.query.pk_content, 10),
+        slug_content = req.query.slug_content;
 
-    if (isNaN(fk_site) || fk_site < 1 || isNaN(pk_content) || pk_content < 1) {
+    if (
+        (isNaN(fk_site) || fk_site < 1) ||
+        ((isNaN(pk_content) || pk_content < 1) && slug_content.length < 1)
+    ) {
         let err = new Error();
         err.status = 400;
         next(err);
     } else {
         contentModel
-            .findOne(pk_content, fk_site)
+            .findOne(fk_site, pk_content, slug_content)
             .then(data => {
                 res.send({
                     data

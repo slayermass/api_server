@@ -28,7 +28,7 @@ model.findAll = (fk_site, pk_menu, label_menu) => {
 
     if (!empty(label_menu)) { // search by label
         condition = '`label_menu` = :label_menu';
-    } else if (!isNaN(fk_site) & fk_site >= 1) { // search by pk
+    } else if (!isNaN(fk_site) && fk_site >= 1) { // search by pk
         condition = '`pk_menu` = :pk_menu';
     } else {
         return;

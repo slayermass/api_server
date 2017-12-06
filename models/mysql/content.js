@@ -21,66 +21,106 @@ mysql.formatBind();
 
 /**
  * поиск, получение контента по ид со всеми полями
+ * сначала получить ид контента, если указана метка (+запрос)
  *
- * @param {int} pk_content      - ид контента
  * @param {int} fk_site         - ид сайта
+ * @param {int} pk_content      - ид контента
+ * @param {String} slug_content - метка контента
  */
-model.findOne = (pk_content, fk_site) => {
+model.findOne = (fk_site, pk_content, slug_content) => {
     return new Promise((resolve, reject) => {
-        async.parallel({
-            content_data: (callback) => { //основная инфа
-                mysql
-                    .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
-                        fk_site,
-                        pk_content
-                    })
-                    .then(rows => {
-                        callback(null, rows[0]);
-                    })
-                    .catch(err => {
-                        if (err === EMPTY_SQL) {
-                            callback(null, {});
-                        } else {
-                            callback(err);
+        model
+            .findPkBySlug(fk_site, pk_content, slug_content)
+            .then(pk_content => {
+                async.parallel({
+                    content_data: (callback) => { //основная инфа
+                        mysql
+                            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
+                                fk_site,
+                                pk_content
+                            })
+                            .then(rows => {
+                                callback(null, rows[0]);
+                            })
+                            .catch(err => {
+                                if (err === EMPTY_SQL) {
+                                    callback(null, {});
+                                } else {
+                                    callback(err);
+                                }
+                            });
+                    },
+                    content_tags: (callback) => { //теги
+                        mysql
+                            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
+                                pk_content
+                            })
+                            .then(rows => {
+                                callback(null, rows);
+                            })
+                            .catch(err => {
+                                if (err === EMPTY_SQL) {
+                                    callback(null, {});
+                                } else {
+                                    callback(err);
+                                }
+                            });
+                    }
+                }, (err, results) => {
+                    if (err) {
+                        errorlog(err);
+                        return reject(err);
+                    }
+
+                    //если есть данные - собрать в однотипное представление данных
+                    if (!empty(results.content_data)) {
+                        results.content_data.tags = [];
+
+                        for (let i = 0; i < results.content_tags.length; i++) {
+                            results.content_data.tags.push({
+                                id: results.content_tags[i].pk_tag,
+                                label: results.content_tags[i].name_tag
+                            });
                         }
-                    });
-            },
-            content_tags: (callback) => { //теги
-                mysql
-                    .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
-                        pk_content
-                    })
-                    .then(rows => {
-                        callback(null, rows);
-                    })
-                    .catch(err => {
-                        if (err === EMPTY_SQL) {
-                            callback(null, {});
-                        } else {
-                            callback(err);
-                        }
-                    });
-            }
-        }, (err, results) => {
-            if (err) {
+                    }
+
+                    resolve(results.content_data);
+                });
+
+            })
+            .catch(err => {
                 errorlog(err);
                 return reject(err);
-            }
+            });
+    });
+};
 
-            //если есть данные - собрать в однотипное представление данных
-            if (!empty(results.content_data)) {
-                results.content_data.tags = [];
-
-                for (let i = 0; i < results.content_tags.length; i++) {
-                    results.content_data.tags.push({
-                        id: results.content_tags[i].pk_tag,
-                        label: results.content_tags[i].name_tag
-                    });
-                }
-            }
-
-            resolve(results.content_data);
-        });
+/**
+ * find pk of content by slug
+ * returns faster if pk already set
+ *
+ * @param fk_site
+ * @param pk_content
+ * @param slug_content
+ * @returns {Promise}
+ */
+model.findPkBySlug = (fk_site, pk_content, slug_content) => {
+    return new Promise((resolve, reject) => {
+        if (!isNaN(pk_content) && pk_content >= 1) {
+            resolve(pk_content);
+        } else {
+            mysql
+                .getSqlQuery("SELECT `pk_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `slug_content` = :slug_content", {
+                    fk_site,
+                    slug_content: entities.encode(slug_content)
+                })
+                .then(rows => {
+                    resolve(rows[0].pk_content);
+                })
+                .catch(() => {
+                    reject();
+                });
+        }
     });
 };
 
