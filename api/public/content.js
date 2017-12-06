@@ -7,7 +7,7 @@ const router = require('express').Router(),
  *
  * @see model.findPublic
  */
-/**router.get('/content', (req, res, next) => {
+router.get('/content', (req, res, next) => {
     let limit = parseInt(req.query.limit, 10) || 20,
         fk_site = parseInt(req.query.fk_site, 10),
         isdeleted = parseInt(req.query.isdeleted, 10) || -1,
@@ -23,7 +23,7 @@ const router = require('express').Router(),
         next(err);
     } else {
         model
-            .findPublic(fk_site, {
+            .find(fk_site, {
                 limit,
                 orderby,
                 isdeleted,
@@ -37,6 +37,6 @@ const router = require('express').Router(),
                 next(err);
             });
     }
-});*/
+});
 
 module.exports = router;
