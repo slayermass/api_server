@@ -9,6 +9,7 @@ const
     entities = new Entities(),
     errorlog = require('../../functions').error,
     async = require('async'),
+    slugify = require('transliteration').slugify,
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
 
 mysql.formatBind();
@@ -41,9 +42,12 @@ tags.checkSave = (fk_site, tags) => {
                     })
                     .catch(err => {
                         if (err === EMPTY_SQL) { // не найдено
+                            let slug_tag = slugify(name_tag);
+
                             mysql
-                                .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`name_tag`, `fk_site`) VALUES (:name_tag, :fk_site);", {
+                                .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`name_tag`, `slug_tag`, `fk_site`) VALUES (:name_tag, :slug_tag, :fk_site);", {
                                     name_tag,
+                                    slug_tag,
                                     fk_site
                                 })
                                 .then(row => {
@@ -83,7 +87,7 @@ tags.checkSave = (fk_site, tags) => {
 tags.getAllBySite = (fk_site, limit, offset) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `pk_tag` DESC LIMIT :limit OFFSET :offset;", {
+            .getSqlQuery("SELECT `pk_tag`, `name_tag`, `slug_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `pk_tag` DESC LIMIT :limit OFFSET :offset;", {
                 fk_site,
                 limit,
                 offset
