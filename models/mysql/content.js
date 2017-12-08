@@ -52,7 +52,7 @@ model.findOne = (fk_site, pk_content, slug_content) => {
                     },
                     content_tags: (callback) => { //теги
                         mysql
-                            .getSqlQuery("SELECT `pk_tag`, `name_tag`, `slug_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
+                            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
                                 pk_content
                             })
                             .then(rows => {
@@ -79,8 +79,7 @@ model.findOne = (fk_site, pk_content, slug_content) => {
                         for (let i = 0; i < results.content_tags.length; i++) {
                             results.content_data.tags.push({
                                 id: results.content_tags[i].pk_tag,
-                                label: results.content_tags[i].name_tag,
-                                slug: results.content_tags[i].slug_tag
+                                label: results.content_tags[i].name_tag
                             });
                         }
                     }
