@@ -174,11 +174,11 @@ model.find = (fk_site, params, search, withcount) => {
     }
 
     // поиск по метке тегов, джойн через таблицы тегов и связей-тегов
-    if (!empty(params.slug_tag)) {
+    if (!empty(params.name_tag)) {
         leftJoin = 'LEFT JOIN `' + r_content_to_tagsmodel.getTableName() + '` ON `pk_content` = `fk_content`' +
             'LEFT JOIN `' + tagsmodel.getTableName() + '` ON `fk_tag` = `pk_tag`';
 
-        add_where += ' AND slug_tag = :slug_tag';
+        add_where += ' AND name_tag = :name_tag';
     }
 
     return new Promise((resolve, reject) => {
@@ -194,7 +194,7 @@ model.find = (fk_site, params, search, withcount) => {
                             isdeleted: params.isdeleted,
                             status_content: params.status,
                             offset: params.offset,
-                            slug_tag: entities.encode(params.slug_tag)
+                            name_tag: entities.encode(params.name_tag)
                         })
                     .then(rows => {
                         callback(null, rows);
