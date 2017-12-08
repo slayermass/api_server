@@ -1,6 +1,7 @@
 "use strict";
 
-let tags = function(){};
+let model = function () {
+};
 
 const
     TABLE_NAME = 'tags',
@@ -21,7 +22,7 @@ mysql.formatBind();
  * @param {int} fk_site - ид ресурса
  * @param {Array} tags - названия тегов *
  */
-tags.checkSave = (fk_site, tags) => {
+model.checkSave = (fk_site, tags) => {
     let farr = [];
 
     for(let i = 0; i < tags.length; i++) {
@@ -84,7 +85,7 @@ tags.checkSave = (fk_site, tags) => {
  * @param {int} limit   - кол-во тегов
  * @param {int} offset  - отступ
  */
-tags.getAllBySite = (fk_site, limit, offset) => {
+model.getAllBySite = (fk_site, limit, offset) => {
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_tag`, `name_tag`, `slug_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `pk_tag` DESC LIMIT :limit OFFSET :offset;", {
@@ -112,7 +113,7 @@ tags.getAllBySite = (fk_site, limit, offset) => {
  * @param {int} fk_site - ид ресурса
  * @param {String} name - название тега
  */
-tags.findByName = (fk_site, name) => {
+model.findByName = (fk_site, name) => {
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `name_tag` LIKE '%" + entities.encode(name) + "%';", {
@@ -132,4 +133,12 @@ tags.findByName = (fk_site, name) => {
     });
 };
 
-module.exports = tags;
+/**
+ * get a table name of model
+ * @returns {string}
+ */
+model.getTableName = () => {
+    return TABLE_NAME;
+};
+
+module.exports = model;

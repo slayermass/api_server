@@ -160,31 +160,41 @@ model.delete = (delArr) => {
  * @param {int} withcount       - включить ли вывод кол-ва записей}
  */
 model.find = (fk_site, params, search, withcount) => {
-    let add_where = addWhere(search);
+    let add_where = addWhere(search),
+        leftJoin = '';
 
-    //указан статус
+    // указан статус
     if (params.status !== 0) {
         add_where += ' AND `status_content` = :status_content';
     }
 
-    //указан удаленность контента
+    // указан удаленность контента
     if (params.isdeleted !== -1) {
         add_where += ' AND `isdeleted` = :isdeleted';
+    }
+
+    // поиск по метке тегов, джойн через таблицы тегов и связей-тегов
+    if (!empty(params.slug_tag)) {
+        leftJoin = 'LEFT JOIN `' + r_content_to_tagsmodel.getTableName() + '` ON `pk_content` = `fk_content`' +
+            'LEFT JOIN `' + tagsmodel.getTableName() + '` ON `fk_tag` = `pk_tag`';
+
+        add_where += ' AND slug_tag = :slug_tag';
     }
 
     return new Promise((resolve, reject) => {
         async.parallel({
             content_data: (callback) => { //основная инфа
                 mysql
-                    .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` " +
-                        "WHERE `fk_site` = :fk_site " + add_where +
+                    .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "`" + leftJoin +
+                        " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site " + add_where +
                         " ORDER BY " + params.orderby + " LIMIT :limit OFFSET :offset"
                         , {
                             fk_site,
                             limit: params.limit,
                             isdeleted: params.isdeleted,
                             status_content: params.status,
-                            offset: params.offset
+                            offset: params.offset,
+                            slug_tag: entities.encode(params.slug_tag)
                         })
                     .then(rows => {
                         callback(null, rows);

@@ -15,6 +15,7 @@ router.get('/content', (req, res, next) => {
         orderby = (req.query.orderby) ? req.query.orderby : 'pk_content DESC',
         withcount = parseInt(req.query.withcount, 10) || 0,
         offset = parseInt(req.query.offset, 10) || 0,
+        slug_tag = req.query.slug_tag,
         search = req.query.search || {};
 
     if (isNaN(fk_site) || fk_site < 1) {
@@ -28,7 +29,8 @@ router.get('/content', (req, res, next) => {
                 orderby,
                 isdeleted,
                 status,
-                offset
+                offset,
+                slug_tag
             }, search, withcount)
             .then(data => {
                 res.send(data);

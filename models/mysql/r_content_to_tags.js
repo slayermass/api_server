@@ -52,4 +52,12 @@ model.save = (fk_content, fk_tags) => {
     });
 };
 
+/**
+ * get a table name of model
+ * @returns {string}
+ */
+model.getTableName = () => {
+    return TABLE_NAME;
+};
+
 module.exports = model;
