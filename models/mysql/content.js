@@ -430,7 +430,7 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
 
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
+            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
                 ignore_slugs,
                 fk_site
             })

@@ -61,8 +61,10 @@ model.findAll = (fk_site, limit, offset, search) => {
                         " WHERE `fk_site` = :fk_site", {
                         fk_site
                     })
-                    .then(rows => {
-                        callback(null, rows);
+                    .then(row => {
+                        callback(null, {
+                            count: row[0].count
+                        });
                     })
                     .catch(err => {
                         if (err === EMPTY_SQL) {
