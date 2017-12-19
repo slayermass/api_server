@@ -1,5 +1,7 @@
 const router = require('express').Router(),
     functions = require('../../functions'),
+    BadRequestError = require('../../functions').BadRequestError,
+    InternalServerError = require('../../functions').InternalServerError,
     contentModel = require('../../models/mysql/content');
 
 /**
@@ -16,9 +18,7 @@ router.get('/contentone', (req, res, next) => {
         (isNaN(fk_site) || fk_site < 1) ||
         ((isNaN(pk_content) || pk_content < 1) && slug_content.length < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         contentModel
             .findOne(fk_site, pk_content, slug_content)
@@ -54,9 +54,7 @@ router.delete('/content', (req, res, next) => {
                 next(err);
             });
     } else {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     }
 });
 
@@ -76,9 +74,7 @@ router.get('/content', (req, res, next) => {
         search = req.query.search || {};
 
     if (isNaN(fk_site) || fk_site < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         contentModel
             .find(fk_site, {
@@ -122,9 +118,7 @@ router.post('/content', (req, res, next) => {
         (isNaN(content.fk_user_created) || content.fk_user_created < 1) ||
         (isNaN(fk_site) || fk_site < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else if (content.pk_content) { //редактирование
         contentModel
             .update(content, fk_site)

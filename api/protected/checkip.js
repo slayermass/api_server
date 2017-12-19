@@ -18,13 +18,6 @@ router.all('/*', function (req, res, next) {
         err.status = 401;
         next(err);
     }
-    /**if(allowIps.includes(requestIp.getClientIp(req))) {
-        next();
-    } else {
-        let err = new Error('Access Denied');
-        err.status = 401;
-        next(err);
-    }*/
 });
 
 module.exports = router;

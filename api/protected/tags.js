@@ -1,4 +1,6 @@
 const router = require('express').Router(),
+    BadRequestError = require('../../functions').BadRequestError,
+    InternalServerError = require('../../functions').InternalServerError,
     tagsModel = require('../../models/mysql/tags');
 
 /**
@@ -26,9 +28,7 @@ router.post('/tags', (req, res, next) => {
     }
 
     if(tags.length === 0) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         tagsModel
             .checkSave(fk_site, tags)
@@ -36,9 +36,7 @@ router.post('/tags', (req, res, next) => {
                 res.send(data);
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 500;
-                next(err);
+                next(InternalServerError());
             });
     }
 });
@@ -56,9 +54,7 @@ router.get('/tags', (req, res, next) => {
     if(limit > 500) limit = 500;
 
     if(isNaN(fk_site)) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         tagsModel
             .getAllBySite(fk_site, limit, offset)
@@ -66,9 +62,7 @@ router.get('/tags', (req, res, next) => {
                 res.send(data);
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 500;
-                next(err);
+                next(InternalServerError());
             });
     }
 });
@@ -83,9 +77,7 @@ router.get('/tags/findByName', (req, res, next) => {
         name = req.query.name || '';
 
     if(isNaN(fk_site) && name.length < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         tagsModel
             .findByName(fk_site, name)
@@ -102,9 +94,7 @@ router.get('/tags/findByName', (req, res, next) => {
                 res.json(ret);
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 500;
-                next(err);
+                next(InternalServerError());
             });
     }
 });

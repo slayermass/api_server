@@ -1,4 +1,6 @@
 const router = require('express').Router(),
+    BadRequestError = require('../../functions').BadRequestError,
+    doArray = require('../../functions').doArray,
     model = require('../../models/mysql/text_blocks');
 
 /**
@@ -9,22 +11,34 @@ const router = require('express').Router(),
 router.post('/text_blocks', (req, res, next) => {
     let fk_site = parseInt(req.body.fk_site, 10),
         text_block = {
-            isactive: parseInt(req.body.isactive, 10) || 1,
-            text: req.body.text,
-            type: req.body.type,
-            label: req.body.label,
+            isactive: parseInt(req.body.isactive, 10),
+            text_block: req.body.text_block,
+            type_block: parseInt(req.body.type_block, 10) || 1,
+            label_block: req.body.label_block,
             pk_text_block: parseInt(req.body.pk_text_block, 10),
             fk_user_created: parseInt(req.body.fk_user_created, 10)
         };
 
+    // 0 не учитывается при parseInt('0', 10) || 1,
+    if (isNaN(text_block.isactive)) {
+        text_block.isactive = 1;
+    }
+
     //проверка
     if (
         (isNaN(fk_site) || fk_site < 1) ||
-        text_block.text.length < 1 || text_block.label.length < 1 || text_block.type.length < 1
+        text_block.text_block.length < 1 || text_block.label_block.length < 1 || text_block.type_block.length < 1
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
+    } else if (!isNaN(text_block.pk_text_block) && text_block.pk_text_block >= 1) {
+        model
+            .update(text_block, fk_site)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(err => {
+                next(err);
+            });
     } else {
         model
             .create(text_block, fk_site)
@@ -44,20 +58,18 @@ router.post('/text_blocks', (req, res, next) => {
  */
 router.get('/text_block', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site, 10),
-        pk_block = parseInt(req.query.pk_block, 10) || 0,
+        pk_text_block = parseInt(req.query.pk_text_block, 10) || 0,
         label = req.query.label;
 
     //проверка
     if (
         (isNaN(fk_site) || fk_site < 1) ||
-        ((isNaN(pk_block) || pk_block < 1) && label.length < 1)
+        ((isNaN(pk_text_block) || pk_text_block < 1) && (label !== undefined && label.length < 1))
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
-            .find(fk_site, pk_block, label)
+            .find(fk_site, pk_text_block, label)
             .then(data => {
                 res.send(data);
             })
@@ -80,9 +92,7 @@ router.get('/text_blocks', (req, res, next) => {
         search = req.query.search || {};
 
     if (isNaN(fk_site) || fk_site < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .findAll(fk_site, {
@@ -96,6 +106,31 @@ router.get('/text_blocks', (req, res, next) => {
             .catch(err => {
                 next(err);
             });
+    }
+});
+
+/**
+ * deleting text blocks by id
+ *
+ * @see model.delete
+ */
+router.delete('/text_blocks', (req, res, next) => {
+    let delArr = doArray(req.body.delArr);
+
+    if (delArr.length) {
+        model
+            .delete(delArr)
+            .then(count => {
+                res.send({
+                    success: true,
+                    count
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
+    } else {
+        next(BadRequestError());
     }
 });
 

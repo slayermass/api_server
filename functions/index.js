@@ -46,3 +46,29 @@ module.exports.addWhere = (search) => {
 
     return add_where;
 };
+
+/**
+ * except an error - http code 400
+ *
+ * @param {String} msg - Human-readable description of the error.
+ *
+ * @returns Error
+ */
+module.exports.BadRequestError = (msg = '') => {
+    let err = new Error(msg);
+    err.status = 400;
+    return err;
+};
+
+/**
+ * except an error - http code 500
+ *
+ * @param {String} msg - Human-readable description of the error.
+ *
+ * @returns Error
+ */
+module.exports.InternalServerError = (msg = '') => {
+    let err = new Error(msg);
+    err.status = 450;
+    return err;
+};

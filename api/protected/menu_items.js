@@ -1,5 +1,7 @@
 const router = require('express').Router(),
     model = require('../../models/mysql/menu_items'),
+    BadRequestError = require('../../functions').BadRequestError,
+    InternalServerError = require('../../functions').InternalServerError,
     modelMenu = require('../../models/mysql/menu');
 
 /**
@@ -17,9 +19,7 @@ router.get('/menu_items', (req, res, next) => {
         (isNaN(fk_site) || fk_site < 1) ||
         ((isNaN(pk_menu) || pk_menu < 1) && label_menu.length < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .findAll(fk_site, pk_menu, label_menu)
@@ -47,9 +47,7 @@ router.get('/menus', (req, res, next) => {
 
     //проверка
     if (isNaN(fk_site) || fk_site < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         modelMenu
             .findAll(fk_site, limit, offset, search)
@@ -73,9 +71,7 @@ router.get('/menu', (req, res, next) => {
 
     //проверка
     if ((isNaN(fk_site) || fk_site < 1) || (isNaN(pk_menu) || pk_menu < 1)) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         modelMenu
             .findOne(fk_site, pk_menu)
@@ -104,9 +100,7 @@ router.post('/menu', (req, res, next) => {
 
     //проверка
     if ((isNaN(fk_site) || fk_site < 1) || isNaN(menu.pk_menu) || menu.name_menu.length < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else if (menu.pk_menu === 0) { // create
         modelMenu
             .createOne(fk_site, menu)
@@ -152,9 +146,7 @@ router.post('/menu_item', (req, res, next) => {
         (isNaN(fk_site) || fk_site < 1) || menu_item.name_menu_item.length < 1
         || menu_item.path_menu_item.length < 1 || (isNaN(pk_menu) || pk_menu < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else if (menu_item.pk_menu_item === 0) {
         model
             .createOne(menu_item, pk_menu)
@@ -197,9 +189,7 @@ router.delete('/menu_item', (req, res, next) => {
         (isNaN(pk_menu_item) || pk_menu_item < 1) ||
         (isNaN(pk_menu) || pk_menu < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .deleteOne(fk_site, pk_menu, pk_menu_item)
@@ -227,9 +217,7 @@ router.delete('/menu', (req, res, next) => {
         (isNaN(fk_site) || fk_site < 1) ||
         (isNaN(pk_menu) || pk_menu < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         modelMenu
             .deleteOne(fk_site, pk_menu)
@@ -255,9 +243,7 @@ router.post('/menu_sort', (req, res, next) => {
         saveSort = req.body.saveSort;
 
     if ((isNaN(fk_site) || fk_site < 1) || saveSort.length < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .saveSort(fk_site, pk_menu, saveSort)

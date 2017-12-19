@@ -11,6 +11,8 @@ const
     mime = require('mime-types'),
     del = require('del'),
     upload_files = require('../../models/mysql/upload_files'),
+    BadRequestError = require('../../functions').BadRequestError,
+    InternalServerError = require('../../functions').InternalServerError,
 
     //разрешенные расширения
     allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp', 'rar'],
@@ -76,9 +78,7 @@ router.post('/upload_link', (req, res, next) => {
         fk_site = parseInt(req.body.fk_site, 10);
 
     if ((isNaN(fk_site) || fk_site < 1) || link.length < 5) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         upload_files
             .newByLink(fk_site, link, name)
@@ -106,9 +106,7 @@ router.post('/upload', upload.any(), function(req, res, next) {
         fk_site = parseInt(req.body.fk_site, 10);
 
     if (isNaN(fk_site) || fk_site < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         if (req.files !== undefined) {
             for (let i = 0; i < req.files.length; i++) {
@@ -175,9 +173,7 @@ router.delete('/upload', (req, res, next) => {
     }
 
     if((pk_files.length === 0 || files.length === 0) && isNaN(fk_site)) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else if(pk_files.length) {
         upload_files
             .findPathByIds(fk_site, pk_files)
@@ -200,9 +196,7 @@ router.delete('/upload', (req, res, next) => {
                     });
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 404;
-                next(err);
+                next(BadRequestError());
             });
     } else {
         //найти расположение файлов
@@ -227,9 +221,7 @@ router.delete('/upload', (req, res, next) => {
                     });
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 404;
-                next(err);
+                next(BadRequestError());
             });
     }
 });
@@ -246,9 +238,7 @@ router.get('/upload/list', (req, res, next) => {
         fk_site = parseInt(req.query.fk_site, 10);
 
     if(isNaN(fk_site)) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         upload_files
             .findApi(fk_site, limit)
@@ -256,9 +246,7 @@ router.get('/upload/list', (req, res, next) => {
                 res.send(data);
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 500;
-                next(err);
+                next(InternalServerError());
             });
     }
 });
@@ -274,9 +262,7 @@ router.get('/upload/infoFile', (req, res, next) => {
         fk_site = parseInt(req.query.fk_site, 10);
 
     if(isNaN(fk_site) || isNaN(pk_file)) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         upload_files
             .getInfoFile(fk_site, pk_file)
@@ -284,9 +270,7 @@ router.get('/upload/infoFile', (req, res, next) => {
                 res.send(data);
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 500;
-                next(err);
+                next(InternalServerError());
             });
     }
 });

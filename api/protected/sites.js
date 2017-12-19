@@ -1,4 +1,5 @@
 const router = require('express').Router(),
+    InternalServerError = require('../../functions').InternalServerError,
     sitesModel = require('../../models/mysql/sites');
 
 /**
@@ -12,9 +13,7 @@ router.get('/sites', (req, res, next) => {
             res.send(data);
         })
         .catch(() => {
-            let err = new Error();
-            err.status = 500;
-            next(err);
+            next(InternalServerError());
         });
 });
 

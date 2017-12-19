@@ -25,28 +25,32 @@ model.getTableName = () => {
 };
 
 /**
- * create html text block
+ * create text block
  *
  * @param {Object} text_block - data of text block
  *      @param {text} text    - text block
- *      @param {String} label - label block (uniq)
+ *      @param {String} label_block - label block (uniq)
+ *      @param {int} type     - type of block(text(1)/html(2))
  * @param {int} fk_site       - id site
  */
 model.create = (text_block, fk_site) => {
-    let label = entities.encode(text_block.label);
+    let label = entities.encode(text_block.label_block);
+
+
 
     return new Promise((resolve, reject) => {
         model
             .checkUniqLabel(label, fk_site)
             .then(() => {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`text`, `label_text_block`, `isactive`, `fk_site`, `fk_user_created`)" +
-                        " VALUES (:text, :label, :isactive, :fk_site, :fk_user_created);", {
-                        text: entities.encode(text_block.text),
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`text_block`, `label_text_block`, `isactive`, `fk_site`, `fk_user_created`, `type_block`)" +
+                        " VALUES (:text_block, :label, :isactive, :fk_site, :fk_user_created, :type_block);", {
+                        text_block: entities.encode(text_block.text_block),
                         label,
                         isactive: text_block.isactive,
                         fk_site,
-                        fk_user_created: text_block.fk_user_created
+                        fk_user_created: text_block.fk_user_created,
+                        type_block: text_block.type_block
                     })
                     .then(row => {
                         resolve({
@@ -69,17 +73,81 @@ model.create = (text_block, fk_site) => {
 };
 
 /**
+ * update text block by id
+ *
+ * @param {Object} text_block - data of text block
+ *      @param {text} text    - text block
+ *      @param {String} label - label block (uniq)
+ *      @param {int} type     - type of block(text(1)/html(2))
+ * @param {int} fk_site       - id site
+ */
+model.update = (text_block, fk_site) => {
+    let label = entities.encode(text_block.label_block);
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `label_text_block` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_text_block` = :pk_text_block", {
+                fk_site,
+                pk_text_block: text_block.pk_text_block
+            })
+            .then(row => {
+                model
+                    .checkUniqLabel(label, fk_site, [row[0].label_text_block])
+                    .then(() => {
+                        mysql
+                            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `text_block`= :text_block," +
+                                " `label_text_block` = :label, `isactive` = :isactive, `fk_site` = :fk_site," +
+                                " `fk_user_created` = :fk_user_created, `type_block` = :type_block" +
+                                " WHERE `pk_text_block` = :pk_text_block", {
+                                text_block: entities.encode(text_block.text_block),
+                                label,
+                                isactive: text_block.isactive,
+                                fk_site,
+                                fk_user_created: text_block.fk_user_created,
+                                type_block: text_block.type_block,
+                                pk_text_block: text_block.pk_text_block
+                            })
+                            .then(row => {
+                                resolve({
+                                    success: true,
+                                    pk_text_block: row.insertId
+                                });
+                            })
+                            .catch(err => {
+                                errorlog(err);
+                                reject(err);
+                            });
+                    })
+                    .catch(() => {
+                        resolve({
+                            success: false,
+                            errors: ['required unique label']
+                        });
+                    });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
  * check label for unique
  *
  * @param {String} label        - label
  * @param {int} fk_site         - id site
+ * @param {Array} ignored_slugs - слаги для игнора(например при сохранении проверять все, но не сохраняемый) необяз
  */
-model.checkUniqLabel = (label, fk_site) => {
+model.checkUniqLabel = (label, fk_site, ignored_slugs = []) => {
+    let ignore_slugs = ignored_slugs.join(',');
+
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `label_text_block` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `label_text_block` = :label", {
+            .getSqlQuery("SELECT `label_text_block` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `label_text_block` = :label AND `label_text_block` NOT IN(:ignore_slugs)", {
                 label,
-                fk_site
+                fk_site,
+                ignore_slugs,
             })
             .then(() => {
                 reject();
@@ -94,12 +162,12 @@ model.checkUniqLabel = (label, fk_site) => {
  * getting content by id/label of text block
  *
  * @param {int} fk_site     - id site
- * @param {int} pk_block    - id text block
+ * @param {int} pk_text_block    - id text block
  * @param {String} label    - label block
  *
  * @returns {Promise}
  */
-model.find = (fk_site, pk_block, label) => {
+model.find = (fk_site, pk_text_block, label) => {
     let condition = '';
 
     return new Promise((resolve, reject) => {
@@ -112,11 +180,11 @@ model.find = (fk_site, pk_block, label) => {
         }
 
         mysql
-            .getSqlQuery("SELECT `pk_text_block`, `text`" +
+            .getSqlQuery("SELECT `pk_text_block`, `text_block`, `label_text_block`, `isactive`, `type_block`" +
                 " FROM `" + TABLE_NAME + "`" +
                 " WHERE `fk_site` = :fk_site AND " + condition, {
                 fk_site,
-                pk_text_block: pk_block,
+                pk_text_block,
                 label_text_block: label
             })
             .then(rows => {
@@ -199,5 +267,27 @@ model.findAll = (fk_site, params, search) => {
         });
     });
 };
+
+/**
+ * deleting text blocks by id
+ *
+ * @param {Array} delArr - array of id text blocks
+ */
+model.delete = (delArr) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_text_block` IN(" + delArr.join(',') + ")", {})
+            .then(rows => {
+                resolve({
+                    deleted: rows.affectedRows
+                });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
 
 module.exports = model;
