@@ -207,7 +207,7 @@ model.find = (fk_site, pk_text_block, label_block) => {
 model.findPublic = (fk_site, label_block) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `text_block`" +
+            .getSqlQuery("SELECT `text_block`, `label_text_block`" +
                 " FROM `" + TABLE_NAME + "`" +
                 " WHERE `fk_site` = :fk_site AND `label_text_block` = :label_text_block", {
                 fk_site,
