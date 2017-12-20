@@ -163,15 +163,15 @@ model.checkUniqLabel = (label, fk_site, ignored_slugs = []) => {
  *
  * @param {int} fk_site     - id site
  * @param {int} pk_text_block    - id text block
- * @param {String} label    - label block
+ * @param {String} label_block    - label block
  *
  * @returns {Promise}
  */
-model.find = (fk_site, pk_text_block, label) => {
+model.find = (fk_site, pk_text_block, label_block) => {
     let condition = '';
 
     return new Promise((resolve, reject) => {
-        if (!empty(label)) { // search by label
+        if (!empty(label_block)) { // search by label
             condition = '`label_text_block` = :label_text_block';
         } else if (!isNaN(fk_site) && fk_site >= 1) { // search by pk
             condition = '`pk_text_block` = :pk_text_block';
@@ -185,7 +185,33 @@ model.find = (fk_site, pk_text_block, label) => {
                 " WHERE `fk_site` = :fk_site AND " + condition, {
                 fk_site,
                 pk_text_block,
-                label_text_block: label
+                label_text_block: label_block
+            })
+            .then(rows => {
+                resolve(rows[0]);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
+ * public api
+ * getting content by id/label of text block
+ *
+ * @see model.find
+ *
+ * @returns {Promise}
+ */
+model.findPublic = (fk_site, label_block) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `text_block`" +
+                " FROM `" + TABLE_NAME + "`" +
+                " WHERE `fk_site` = :fk_site AND `label_text_block` = :label_text_block", {
+                fk_site,
+                label_text_block: label_block
             })
             .then(rows => {
                 resolve(rows[0]);

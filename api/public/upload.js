@@ -3,6 +3,7 @@ const router = require('express').Router();
 const
     fs = require('fs'),
     mime = require('mime-types'),
+    BadRequestError = require('../../functions').BadRequestError,
     upload_files = require('../../models/mysql/upload_files');
 
 /**
@@ -12,9 +13,7 @@ const
  */
 router.get('/upload/f/:n', (req, res, next) => {
     if(!req.params.n) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         //найти в базе
         upload_files
@@ -43,9 +42,7 @@ router.get('/upload/f/:n', (req, res, next) => {
                 });
             })
             .catch(() => {
-                let err = new Error();
-                err.status = 404;
-                next(err);
+                next(BadRequestError());
             });
     }
 });

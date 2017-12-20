@@ -1,26 +1,25 @@
 const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
-    model = require('../../models/mysql/menu_items');
+    model = require('../../models/mysql/text_blocks');
 
 /**
- * find menu items by pk_menu or label_menu
+ * getting content by id/label
  *
- * @see model.findAll
+ * @see model.find
  */
-router.get('/menu_items', (req, res, next) => {
+router.get('/text_block', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site, 10),
-        pk_menu = parseInt(req.query.pk_menu, 10) || 0,
-        label_menu = req.query.label_menu;
+        label_block = req.query.label_block;
 
     //проверка
     if (
         (isNaN(fk_site) || fk_site < 1) ||
-        ((isNaN(pk_menu) || pk_menu < 1) && label_menu.length < 1)
+        (label_block !== undefined && label_block.length < 1)
     ) {
         next(BadRequestError());
     } else {
         model
-            .findAll(fk_site, pk_menu, label_menu)
+            .findPublic(fk_site, label_block)
             .then(data => {
                 res.send({
                     data

@@ -1,5 +1,6 @@
 const router = require('express').Router(),
     functions = require('../../functions'),
+    BadRequestError = require('../../functions').BadRequestError,
     model = require('../../models/mysql/content');
 
 /**
@@ -19,9 +20,7 @@ router.get('/content', (req, res, next) => {
         search = req.query.search || {};
 
     if (isNaN(fk_site) || fk_site < 1) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .find(fk_site, {
@@ -55,9 +54,7 @@ router.get('/contentone', (req, res, next) => {
         (isNaN(fk_site) || fk_site < 1) ||
         ((isNaN(pk_content) || pk_content < 1) && slug_content.length < 1)
     ) {
-        let err = new Error();
-        err.status = 400;
-        next(err);
+        next(BadRequestError());
     } else {
         model
             .findOne(fk_site, pk_content, slug_content)

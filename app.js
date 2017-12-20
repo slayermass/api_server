@@ -24,14 +24,14 @@ app.disable('x-powered-by');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', function(req, res){//загрузчик многих фото
+/**app.get('/', function(req, res){//загрузчик многих фото
     res.sendFile(path.join(__dirname, 'views/index.html'));
-});
+});*/
 
 app.use('/api', require('./api/protected'));//закрытое api
 app.use('/papi', require('./api/public'));//публичное api
 
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
     let err = new Error('Not Found');
     err.status = 404;
     next(err);
