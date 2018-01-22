@@ -5,8 +5,9 @@
   "main": "app.js",
   "scripts": {
     "startdev": "nodemon -e '.js' app.js",
-    "start": "pm2 start app.js -i max",
-    "stop": "pm2 delete all"
+    "start": "pm2 start app.js -i max --name webserver",
+    "stop": "pm2 delete webserver",
+    "restart": "pm2 stop webserver && pm2 delete webserver && npm run start"
   },
   "author": "slayermass",
   "license": "MIT",
