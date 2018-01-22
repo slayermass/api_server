@@ -4,11 +4,11 @@ const router = require('express').Router(),
     model = require('../../models/mysql/content');
 
 /**
- * getting content for public site
+ * getting content for public site (index page)
  *
  * @see model.findPublic
  */
-/** router.get('/content', (req, res, next) => {
+router.get('/content', (req, res, next) => {
     let limit = parseInt(req.query.limit, 10) || 20,
         fk_site = parseInt(req.query.fk_site, 10),
         isdeleted = parseInt(req.query.isdeleted, 10) || -1,
@@ -38,7 +38,7 @@ const router = require('express').Router(),
                 next(err);
             });
     }
-});*/
+});
 
 /**
  * getting content for public site by slug
