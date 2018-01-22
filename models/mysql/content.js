@@ -459,4 +459,35 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
     });
 };
 
+/**
+ * sets an increment view for content
+ *
+ * @param {int} fk_site         - ид сайта
+ * @param {int} pk_content      - ид контента
+ * @param {String} slug_content - slug content
+ */
+model.incrViews = (fk_site, pk_content, slug_content) => {
+    return new Promise((resolve, reject) => {
+        model
+            .findPkBySlug(fk_site, pk_content, slug_content)
+            .then(pk_content => {
+                mysql
+                    .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET views = views + 1 WHERE `pk_content` = :pk_content AND `fk_site` = :fk_site", {
+                        pk_content,
+                        fk_site
+                    })
+                    .then(() => {
+                        resolve(true);
+                    })
+                    .catch(() => {
+                        resolve(false);
+                    });
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(false);
+            });
+    });
+};
+
 module.exports = model;

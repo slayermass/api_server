@@ -8,7 +8,7 @@ const router = require('express').Router(),
  *
  * @see model.findPublic
  */
-router.get('/content', (req, res, next) => {
+/** router.get('/content', (req, res, next) => {
     let limit = parseInt(req.query.limit, 10) || 20,
         fk_site = parseInt(req.query.fk_site, 10),
         isdeleted = parseInt(req.query.isdeleted, 10) || -1,
@@ -38,10 +38,12 @@ router.get('/content', (req, res, next) => {
                 next(err);
             });
     }
-});
+});*/
 
 /**
- * получение контента по ид
+ * getting content for public site by slug
+ *
+ * + sets a view
  *
  * @see contentModel.findOne
  */
@@ -62,6 +64,8 @@ router.get('/contentone', (req, res, next) => {
                 res.send({
                     data
                 });
+
+                model.incrViews(fk_site, pk_content, slug_content);
             })
             .catch(err => {
                 next(err);
