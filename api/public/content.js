@@ -1,7 +1,9 @@
 const router = require('express').Router(),
     functions = require('../../functions'),
     BadRequestError = require('../../functions').BadRequestError,
-    model = require('../../models/mysql/content');
+    decodeHtml = require('../../functions').decodeHtml,
+    model = require('../../models/mysql/content'),
+    uploadFilesModel = require('../../models/mysql/upload_files');
 
 /**
  * getting content for public site (index page)
@@ -50,7 +52,8 @@ router.get('/content', (req, res, next) => {
 router.get('/contentone', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site, 10),
         pk_content = parseInt(req.query.pk_content, 10),
-        slug_content = req.query.slug_content;
+        slug_content = req.query.slug_content,
+        withimages = parseInt(req.query.withimages, 10) || 0; // найти ид файлов и выдать ссылки на них вместе c результатом
 
     if (
         (isNaN(fk_site) || fk_site < 1) ||
@@ -61,9 +64,39 @@ router.get('/contentone', (req, res, next) => {
         model
             .findOne(fk_site, pk_content, slug_content)
             .then(data => {
-                res.send({
-                    data
-                });
+                if (withimages > 0) {
+                    const ids = getIdsFromShortcodes(data.text_content);
+
+                    // дождаться инфы о файлах и отправить ответ
+                    uploadFilesModel
+                        .findApi(fk_site, 0, ids)
+                        .then(images => {
+                            let ret_images = {};
+
+                            for (let i = 0; i < images.length; i++) {
+                                // pk_file можно удалить
+                                ret_images[images[i].pk_file] = images[i];
+                            }
+
+                            res.send({
+                                data,
+                                images: ret_images
+                            });
+                        })
+                        .catch(() => { // ошибка - слать ответ
+                            res.send({
+                                data,
+                                images: {}
+                            });
+                        });
+
+                    console.log(ids);
+
+                } else {
+                    res.send({
+                        data
+                    });
+                }
 
                 model.incrViews(fk_site, pk_content, slug_content);
             })
@@ -74,3 +107,29 @@ router.get('/contentone', (req, res, next) => {
 });
 
 module.exports = router;
+
+/**
+ * вычленять из текста куски шорткодов(файлы, изображения)
+ *
+ * @param {HTML} html
+ * @returns {Array}
+ */
+function getIdsFromShortcodes(html) {
+    let return_ids = [];
+
+    html = decodeHtml(html);
+
+    if (html.includes('[gallery')) {
+        // обычно в теге <p> tinymce создает
+        html.replace(/<p>\[gallery([^\]]*)\]<\/p>/g, (all, ids) => {
+            ids = ids.split('"');
+            ids = ids[1].split(',');
+
+            for (let i = 0; i < ids.length; i++) {
+                return_ids.push(parseInt(ids[i], 10));
+            }
+        });
+    }
+
+    return return_ids;
+}

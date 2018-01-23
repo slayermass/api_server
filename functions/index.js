@@ -1,7 +1,7 @@
 const fs = require('fs'),
     Log = require('log'),
     logger = new Log('debug', fs.createWriteStream('my.log')),
-    Entities = require('html-entities').XmlEntities,
+    Entities = require('html-entities').AllHtmlEntities,
     entities = new Entities();
 
 /**
@@ -12,6 +12,16 @@ const fs = require('fs'),
 module.exports.error = (err) => {
     logger.error(err);
     console.log(err);
+};
+
+/**
+ * декодирование кодированного html
+ *
+ * @param {String} html
+ * @returns {String}
+ */
+module.exports.decodeHtml = (html) => {
+    return entities.decode(html);
 };
 
 /**

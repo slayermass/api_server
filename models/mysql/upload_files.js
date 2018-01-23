@@ -242,20 +242,35 @@ upload_files.deleteByIds = (pk_files) => {
 };
 
 /**
- * поиск для api
+ * поиск файлов, информации о них для api
  *
- * @param {int} limit - Кол-во файлов
+ * @param {int} fk_site     - ид ресурса
+ * @param {int} limit       - Кол-во файлов (0 при ids)
+ * @param {Array} pk_files  - поиск по ид файлов(игнорируя лимит)
  *
  * @returns {Promise}
  */
-upload_files.findApi = (fk_site, limit) => {
+upload_files.findApi = (fk_site, limit, pk_files) => {
+    let add_where = '',
+        add_limit = '';
+
+    // проверка на указанность параметров
+    if (limit === 0 && pk_files.length >= 1) {
+        add_where = "AND `pk_file` IN (:pk_files) ";
+    } else {
+        add_limit = "LIMIT :limit";
+    }
+
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_file`, `original_name_file`, `name_file`, `upload_date`, `link` " +
                 "FROM `" + TABLE_NAME + "` " +
-                "WHERE `fk_site` = :fk_site ORDER BY `upload_date` DESC LIMIT :limit", {
+                "WHERE `fk_site` = :fk_site " +
+                add_where +
+                "ORDER BY `upload_date` DESC " + add_limit, {
                 fk_site,
-                limit
+                limit,
+                pk_files
             })
             .then(rows => {
                 //добавить расширение файла
@@ -321,8 +336,9 @@ upload_files.getInfoFile = (fk_site, pk_file) => {
                             });
 
                             resolve(return_arr);
-                        } else {
-                            reject();
+                        } else { // файл не существует физически
+                            errorlog(`REQUESTED FILE IS NOT FOUND ON DISK. PATH: ${filePath}, ID: ${pk_file}`);
+                            reject('REQUESTED FILE IS NOT FOUND ON DISK');
                         }
                     });
                 }
