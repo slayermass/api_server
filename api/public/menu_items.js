@@ -23,7 +23,8 @@ router.get('/menu_items', (req, res, next) => {
             .findAll(fk_site, pk_menu, label_menu)
             .then(data => {
                 res.send({
-                    data
+                    label_menu,
+                    menu_items: data
                 });
             })
             .catch(err => {
