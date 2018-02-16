@@ -23,7 +23,7 @@ router.get('/menu_items', (req, res, next) => {
             .findAll(fk_site, pk_menu, label_menu)
             .then(data => {
                 res.send({
-                    label_menu,
+                    label_menu: data[0].label_menu, // не очень умно
                     menu_items: data
                 });
             })

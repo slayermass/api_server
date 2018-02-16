@@ -36,7 +36,7 @@ model.findAll = (fk_site, pk_menu, label_menu) => {
 
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_menu_item`, `name_menu_item`, `path_menu_item`, `isactive`" +
+            .getSqlQuery("SELECT `pk_menu_item`, `name_menu_item`, `path_menu_item`, `isactive`, `label_menu`" +
                 " FROM `" + TABLE_NAME + "`" +
                 " LEFT JOIN `" + MENU_TABLE_NAME + "` ON " + MENU_TABLE_NAME + ".pk_menu = " + TABLE_NAME + ".fk_menu" +
                 " WHERE `fk_site` = :fk_site AND " + condition +
