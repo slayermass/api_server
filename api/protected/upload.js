@@ -141,39 +141,35 @@ router.post('/upload', upload.any(), (req, res, next) => {
     if (isNaN(fk_site) || fk_site < 1) {
         next(BadRequestError());
     } else {
-        if (req.files !== undefined) {
-            for (let i = 0; i < req.files.length; i++) {
-                let fpath = req.files[i].path;
+        for (let i = 0; i < req.files.length; i++) {
+            /** let fpath = req.files[i].path;
 
-                //точная проверка еще раз
-                /** const buffer = readChunk.sync(fpath, 0, 4100);
+             //точная проверка еще раз
+             const buffer = readChunk.sync(fpath, 0, 4100);
 
-                if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
-                    fs.unlink(fpath, function (err) {
-                        if (err) throw err;
-                        console.log(fpath + " deleted");
-                    });
-                } else {*/
-                    filesData.push({
-                        original_name_file: req.files[i].originalname,
-                        name_file: req.files[i].filename,
-                        path: req.files[i].destination
-                    });
-                // }
-            }
-
-            //сохранение в бд
-            upload_files
-                .onNewFiles(fk_site, filesData)
-                .then(files_data => {
-                    res.json({success: true, files: files_data});
-                })
-                .catch(() => {
-                    res.json({success: false, errors: 'имеются'});
+             if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
+                fs.unlink(fpath, function (err) {
+                    if (err) throw err;
+                    console.log(fpath + " deleted");
                 });
-        } else {
-            res.json({success: false});
+            } else {*/
+            filesData.push({
+                original_name_file: req.files[i].originalname,
+                name_file: req.files[i].filename,
+                path: req.files[i].destination
+            });
+            // }
         }
+
+        //сохранение в бд
+        upload_files
+            .onNewFiles(fk_site, filesData)
+            .then(files_data => {
+                res.json({success: true, files: files_data});
+            })
+            .catch(() => {
+                res.json({success: false, errors: 'имеются'});
+            });
     }
 });
 
