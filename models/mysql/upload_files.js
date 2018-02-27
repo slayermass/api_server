@@ -23,6 +23,7 @@ mysql.formatBind();
  *           original_name_file(оригинальное имя файла)
              name_file(имя файла на диске)
              path(путь к файлу)
+ folder(папка, отличная от обычной загрузки)
  *
  * @returns {Promise}
  */
@@ -33,12 +34,13 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
         farr.push(
             function(callback) {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`)" +
-                        " VALUES (:fk_site, :original_name_file, :name_file, :path)", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`, `folder`)" +
+                        " VALUES (:fk_site, :original_name_file, :name_file, :path, :folder)", {
                         fk_site,
                         original_name_file: entities.encode(arr_files[i].original_name_file),
                         name_file: arr_files[i].name_file,
-                        path: arr_files[i].path
+                        path: arr_files[i].path,
+                        folder: arr_files[i].folder
                     })
                     .then(row => {
                         callback(null, {
@@ -247,10 +249,11 @@ upload_files.deleteByIds = (pk_files) => {
  * @param {int} fk_site     - ид ресурса
  * @param {int} limit       - Кол-во файлов (0 при ids)
  * @param {Array} pk_files  - поиск по ид файлов(игнорируя лимит)
+ * @param {String} folder   - папка для загрузки(метка)
  *
  * @returns {Promise}
  */
-upload_files.findApi = (fk_site, limit, pk_files) => {
+upload_files.findApi = (fk_site, limit, pk_files, folder) => {
     let add_where = '',
         add_limit = '';
 
@@ -259,6 +262,13 @@ upload_files.findApi = (fk_site, limit, pk_files) => {
         add_where = "AND `pk_file` IN (:pk_files) ";
     } else {
         add_limit = "LIMIT :limit";
+    }
+
+    // если указана папка - искать в ней
+    if (folder === null) {
+        add_where = "AND `folder` IS NULL ";
+    } else {
+        add_where = "AND `folder` = :folder ";
     }
 
     return new Promise((resolve, reject) => {
@@ -270,7 +280,8 @@ upload_files.findApi = (fk_site, limit, pk_files) => {
                 "ORDER BY `upload_date` DESC " + add_limit, {
                 fk_site,
                 limit,
-                pk_files
+                pk_files,
+                folder
             })
             .then(rows => {
                 //добавить расширение файла

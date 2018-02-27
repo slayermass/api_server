@@ -60,7 +60,6 @@ const
         fileFilter: function(req, file, cb) {
             let ext = path.extname(file.originalname);
 
-            //console.log(ext.toLowerCase().replace(/[^a-zA-Z]+/g, ""));
             //проверка по расширению файла
             if(allowExts.indexOf(ext.toLowerCase().replace(/[^a-zA-Z]+/g, "")) === -1) {
                 return cb(null, false);//просто пропускать
@@ -97,9 +96,9 @@ router.post('/upload_link', (req, res, next) => {
 /**
  * загрузка файлов
  *
- * @param {Array} files     - массив файлов для загрузки
- * @param {int} fk_site     - ид сайта
- * @param {String} folder   - папка для загрузки
+ * @param {Array} files         - массив файлов для загрузки
+ * @param {int} fk_site         - ид сайта
+ * @param {String(45)} folder   - папка для загрузки(метка)
  *
  * @returns {json}
  *      {Bool} success - успешность загрузки
@@ -111,18 +110,19 @@ router.post('/upload', upload.any(), (req, res, next) => {
 
         // если указана папка - переместить в нее
         if (folder) {
-            pathExists(`${path_to_save_global}/${folder}`)
+            pathExists(`${path_to_save_global}${folder}`)
                 .then(exists => {
                     if (exists === false) {
-                        fs.mkdirSync(`${path_to_save_global}/${folder}`);
+                        fs.mkdirSync(`${path_to_save_global}${folder}`);
                     }
                 })
                 .then(() => {
                     for (let i = 0; i < req.files.length; i++) {
                         fs.renameSync(req.files[i].path, `${path_to_save_global}${folder}/${req.files[i].filename}`);
 
-                        req.files[i].destination = `${path_to_save_global}/${folder}`;
+                        req.files[i].destination = `${path_to_save_global}${folder}`;
                         req.files[i].path = `${path_to_save_global}${folder}/${req.files[i].filename}`;
+                        req.files[i].folder = folder;
                     }
 
                     next();
@@ -156,7 +156,8 @@ router.post('/upload', upload.any(), (req, res, next) => {
             filesData.push({
                 original_name_file: req.files[i].originalname,
                 name_file: req.files[i].filename,
-                path: req.files[i].destination
+                path: req.files[i].destination,
+                folder: req.files[i].folder
             });
             // }
         }
@@ -264,13 +265,14 @@ router.get('/upload/list', (req, res, next) => {
     const
         qlimit = parseInt(req.query.limit, 10),
         limit = (qlimit && qlimit < 50) ? qlimit : 50,
-        fk_site = parseInt(req.query.fk_site, 10);
+        fk_site = parseInt(req.query.fk_site, 10),
+        folder = req.query.folder || null;
 
     if(isNaN(fk_site)) {
         next(BadRequestError());
     } else {
         upload_files
-            .findApi(fk_site, limit)
+            .findApi(fk_site, limit, [], folder)
             .then(data => {
                 res.send(data);
             })
