@@ -21,10 +21,13 @@ const
 
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
+            //console.log(req);
+
             //проверка существования пути
             pathExists(getSavePath().upload_path)
                 .then(exists => {
                     if(exists === false) {
+                        console.log(getSavePath().upload_path);
                         fs.mkdirSync(getSavePath().upload_path);
                     }
                 })
@@ -57,8 +60,8 @@ const
         fileFilter: function(req, file, cb) {
             let ext = path.extname(file.originalname);
 
-            console.log(ext.toLowerCase().replace(/[^a-zA-Z]+/g, ""));
-            //проверка по разрешению файла
+            //console.log(ext.toLowerCase().replace(/[^a-zA-Z]+/g, ""));
+            //проверка по расширению файла
             if(allowExts.indexOf(ext.toLowerCase().replace(/[^a-zA-Z]+/g, "")) === -1) {
                 return cb(null, false);//просто пропускать
             }
@@ -94,15 +97,45 @@ router.post('/upload_link', (req, res, next) => {
 /**
  * загрузка файлов
  *
- * @param {Array} files - массив файлов для загрузки
+ * @param {Array} files     - массив файлов для загрузки
+ * @param {int} fk_site     - ид сайта
+ * @param {String} folder   - папка для загрузки
  *
  * @returns {json}
  *      {Bool} success - успешность загрузки
  *      {Array} files  - массив названий файлов
  */
-router.post('/upload', upload.any(), function(req, res, next) {
-    let files = [],
-        filesData = [],
+router.post('/upload', upload.any(), (req, res, next) => {
+    if (req.files !== undefined) {
+        const folder = req.body.folder || false;
+
+        // если указана папка - переместить в нее
+        if (folder) {
+            pathExists(`${path_to_save_global}/${folder}`)
+                .then(exists => {
+                    if (exists === false) {
+                        fs.mkdirSync(`${path_to_save_global}/${folder}`);
+                    }
+                })
+                .then(() => {
+                    for (let i = 0; i < req.files.length; i++) {
+                        fs.renameSync(req.files[i].path, `${path_to_save_global}${folder}/${req.files[i].filename}`);
+
+                        req.files[i].destination = `${path_to_save_global}/${folder}`;
+                        req.files[i].path = `${path_to_save_global}${folder}/${req.files[i].filename}`;
+                    }
+
+                    next();
+                });
+
+        } else {
+            next();
+        }
+    } else {
+        res.json({success: false});
+    }
+}, (req, res, next) => {
+    let filesData = [],
         fk_site = parseInt(req.body.fk_site, 10);
 
     if (isNaN(fk_site) || fk_site < 1) {
@@ -113,20 +146,20 @@ router.post('/upload', upload.any(), function(req, res, next) {
                 let fpath = req.files[i].path;
 
                 //точная проверка еще раз
-                const buffer = readChunk.sync(fpath, 0, 4100);
+                /** const buffer = readChunk.sync(fpath, 0, 4100);
 
                 if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
                     fs.unlink(fpath, function (err) {
                         if (err) throw err;
                         console.log(fpath + " deleted");
                     });
-                } else {
+                } else {*/
                     filesData.push({
                         original_name_file: req.files[i].originalname,
                         name_file: req.files[i].filename,
                         path: req.files[i].destination
                     });
-                }
+                // }
             }
 
             //сохранение в бд
