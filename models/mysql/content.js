@@ -212,7 +212,8 @@ model.find = (fk_site, params, search, withcount) => {
                         .getSqlQuery("SELECT COUNT(*) AS count, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countstatus0, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2 " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 3) AS countstatus3 " +
                             "FROM `" + TABLE_NAME + "`", {
                             fk_site
                             })
@@ -220,7 +221,8 @@ model.find = (fk_site, params, search, withcount) => {
                             callback(null, {
                                 countstatus0: row[0].countstatus0,
                                 countstatus1: row[0].countstatus1,
-                                countstatus2: row[0].countstatus2
+                                countstatus2: row[0].countstatus2,
+                                countstatus3: row[0].countstatus3
                             });
                         })
                         .catch(err => {
