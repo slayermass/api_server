@@ -107,7 +107,8 @@ router.post('/content', (req, res, next) => {
         status_content: parseInt(req.body.content.status, 10),
         fk_user_created: parseInt(req.body.content.fk_user_created, 10),
         headimgsrc_content: req.body.content.head_img_src,
-        pk_content: parseInt(req.body.content.pk_content, 10)
+        pk_content: parseInt(req.body.content.pk_content, 10),
+        later_publish_time: req.body.content.later_publish_time
     };
 
     let fk_site = parseInt(req.body.fk_site, 10);

@@ -257,6 +257,7 @@ model.find = (fk_site, params, search, withcount) => {
  *      @param {int}    fk_user_created     - ид создателя
  *      @param {String} headimgsrc_content  - основное изображение
  *      @param {int}    pk_content          - ид контента (новый или пересохранять)
+ *      @param {timestamp} later_publish_time - дата/время отложенной публикации
  * @param {int} fk_site                     - ид сайта
  */
 model.update = (cobj, fk_site) => {
@@ -269,6 +270,15 @@ model.update = (cobj, fk_site) => {
 
     if (cobj.intro_content.length === 0) {
         cobj.intro_content = null;
+    }
+
+    // изменить дату отложенной публикации
+    let publish_date = null,
+        add_sql = '';
+
+    if (cobj.status_content === 3) {
+        publish_date = cobj.later_publish_time;
+        add_sql = ', `publish_date` = :publish_date ';
     }
 
     return new Promise((resolve, reject) => {
@@ -286,6 +296,7 @@ model.update = (cobj, fk_site) => {
                             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content, `slug_content` = :slug, " +
                                 "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
                                 "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content " +
+                                add_sql +
                                 "WHERE `pk_content` = :pk_content"
                                 , {
                                     title_content: cobj.title_content,
@@ -296,7 +307,8 @@ model.update = (cobj, fk_site) => {
                                     status_content: cobj.status_content,
                                     fk_user_updated: cobj.fk_user_created,
                                     update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-                                    pk_content: cobj.pk_content
+                                    pk_content: cobj.pk_content,
+                                    publish_date
                                 })
                             .then(row => {
                                 resolve({
@@ -369,6 +381,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {int}    status_content      - статус
  *      @param {int}    fk_user_created     - ид создателя
  *      @param {String} headimgsrc_content  - основное изображение
+ *      @param {timestamp} later_publish_time - дата/время отложенной публикации
  * @param {int} fk_site                     - ид сайта
  */
 model.save = (cobj, fk_site) => {
@@ -383,14 +396,20 @@ model.save = (cobj, fk_site) => {
         cobj.intro_content = null;
     }
 
+    let publish_date = null;
+
+    if (cobj.status_content === 3) {
+        publish_date = cobj.later_publish_time;
+    }
+
     return new Promise((resolve, reject) => {
         //сохранение контента
         model
             .checkUniqSlug(slug, fk_site)
             .then(slug => {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`)" +
-                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content, :fk_site, :status_content, :fk_user_created);", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`, `publish_date`)" +
+                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content, :fk_site, :status_content, :fk_user_created, :publish_date);", {
                         title_content: cobj.title_content,
                         slug,
                         text_content: cobj.text_content,
@@ -398,7 +417,8 @@ model.save = (cobj, fk_site) => {
                         headimgsrc_content: cobj.headimgsrc_content,
                         fk_site,
                         status_content: cobj.status_content,
-                        fk_user_created: cobj.fk_user_created
+                        fk_user_created: cobj.fk_user_created,
+                        publish_date
                     })
                     .then(row => {
                         resolve({

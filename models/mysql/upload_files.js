@@ -247,7 +247,7 @@ upload_files.deleteByIds = (pk_files) => {
  * поиск файлов, информации о них для api
  *
  * @param {int} fk_site     - ид ресурса
- * @param {int} limit       - Кол-во файлов (0 при ids)
+ * @param {int} limit       - Кол-во файлов (0 при pk_files)
  * @param {Array} pk_files  - поиск по ид файлов(игнорируя лимит)
  * @param {String} folder   - папка для загрузки(метка)
  *
