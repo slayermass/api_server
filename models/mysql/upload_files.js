@@ -11,6 +11,7 @@ const
     mime = require('mime-types'),
     async = require('async'),
     fs = require('fs'),
+    empty = require('is-empty'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
 
 mysql.formatBind();
@@ -253,7 +254,7 @@ upload_files.deleteByIds = (pk_files) => {
  *
  * @returns {Promise}
  */
-upload_files.findApi = (fk_site, limit, pk_files, folder) => {
+upload_files.findApi = (fk_site, limit, pk_files, folder = null) => {
     let add_where = '',
         add_limit = '';
 
@@ -265,7 +266,7 @@ upload_files.findApi = (fk_site, limit, pk_files, folder) => {
     }
 
     // если указана папка - искать в ней
-    if (folder === null) {
+    if (empty(folder)) {
         add_where = "AND `folder` IS NULL ";
     } else {
         add_where = "AND `folder` = :folder ";

@@ -90,8 +90,6 @@ router.get('/contentone', (req, res, next) => {
                             });
                         });
 
-                    console.log(ids);
-
                 } else {
                     res.send({
                         data
