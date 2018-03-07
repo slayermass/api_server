@@ -50,7 +50,7 @@ module.exports.addWhere = (search) => {
         if (search[attr].type === 'integer') {
             add_where += ` AND \`${attr}\` = ${search[attr].val}`;
         } else { //string
-            add_where += ` AND \`${attr}\` LIKE '%${entities.encode(search[attr].val)}%'`;
+            add_where += ` AND \`${attr}\` LIKE '%${search[attr].val}%'`; // entities.encode() - кодирует в непонятное
         }
     }
 

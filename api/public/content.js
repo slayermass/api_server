@@ -8,7 +8,7 @@ const router = require('express').Router(),
 /**
  * getting content for public site (index page)
  *
- * @see model.findPublic
+ * @see model.find
  */
 router.get('/content', (req, res, next) => {
     let limit = parseInt(req.query.limit, 10) || 20,
