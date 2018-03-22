@@ -105,7 +105,7 @@ router.get('/contentone', (req, res, next) => {
 
                 // есть связанные новости
                 if (html.includes('[widgetLinkedContent')) {
-                    html.replace(/<p>\[widgetLinkedContent([^\]]*)\]<\/p>/g, (u, data_widget_lc) => {
+                    html.replace(/\[widgetLinkedContent([^\]]*)\]/g, (u, data_widget_lc) => {
                         widget_lc_ids.push(parseInt(data_widget_lc.match(/\d+/)[0], 10));
                     });
 
