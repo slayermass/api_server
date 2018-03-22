@@ -260,16 +260,16 @@ upload_files.findApi = (fk_site, limit, pk_files, folder = null) => {
 
     // проверка на указанность параметров
     if (limit === 0 && pk_files.length >= 1) {
-        add_where = "AND `pk_file` IN (:pk_files) ";
+        add_where += "AND `pk_file` IN (:pk_files) ";
     } else {
-        add_limit = "LIMIT :limit";
+        add_limit += "LIMIT :limit";
     }
 
     // если указана папка - искать в ней
     if (empty(folder)) {
-        add_where = "AND `folder` IS NULL ";
+        add_where += "AND `folder` IS NULL ";
     } else {
-        add_where = "AND `folder` = :folder ";
+        add_where += "AND `folder` = :folder ";
     }
 
     return new Promise((resolve, reject) => {
