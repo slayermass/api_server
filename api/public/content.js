@@ -72,7 +72,7 @@ router.get('/contentone', (req, res, next) => {
                 });
 
                 // увеличить просмотр
-                model.incrViews(fk_site, pk_content, slug_content);
+                model.incrViews(fk_site, pk_content, slug_content, req);
             })
             .catch(err => {
                 next(err);

@@ -20,7 +20,7 @@ const
     r_content_to_tagsmodel = require('./r_content_to_tags'),
     addWhere = require('../../functions').addWhere,
     uploadFilesModel = require('./upload_files'),
-    ip = require('ip');
+    requestIp = require('request-ip');
 
 mysql.formatBind();
 
@@ -601,7 +601,7 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * @param {int} pk_content      - ид контента или
  * @param {String} slug_content - slug content
  */
-model.incrViews = (fk_site, pk_content, slug_content) => {
+model.incrViews = (fk_site, pk_content, slug_content, req) => {
     return new Promise((resolve, reject) => {
         model
             .findPkBySlug(fk_site, pk_content, slug_content)
@@ -626,7 +626,7 @@ model.incrViews = (fk_site, pk_content, slug_content) => {
                 mysql // SELECT INET6_NTOA(ip)
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
                         pk_content,
-                        ip: ip.address()
+                        ip: requestIp.getClientIp(req)
                     })
                     .then(() => {
                         resolve(true);
