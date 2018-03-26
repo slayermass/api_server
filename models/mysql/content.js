@@ -4,10 +4,13 @@ let model = function(){};
 
 const
     TABLE_NAME = 'content',
+    TABLE_NAME_VIEWS = 'content_views',
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
     errorlog = require('../../functions').error,
+    decodeHtml = require('../../functions').decodeHtml,
+    getIdsFromShortcodes = require('../../functions').getIdsFromShortcodes,
     async = require('async'),
     slugify = require('transliteration').slugify,
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
@@ -15,78 +18,185 @@ const
     moment = require('moment'),
     empty = require('is-empty'),
     r_content_to_tagsmodel = require('./r_content_to_tags'),
-    addWhere = require('../../functions').addWhere;
+    addWhere = require('../../functions').addWhere,
+    uploadFilesModel = require('./upload_files'),
+    ip = require('ip');
 
 mysql.formatBind();
 
 /**
  * поиск, получение контента по ид со всеми полями
  * сначала получить ид контента, если указана метка (+запрос)
+ * уменьшение кол-ва запросов, желательно до 1
  *
  * @param {int} fk_site         - ид сайта
  * @param {int} pk_content      - ид контента
  * @param {String} slug_content - метка контента
+ * @param {Object} params       - доп параметры
+ *      {int} withimages        - включить ли изображения галерей
+ *      {bool} wlc              - не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
  */
-model.findOne = (fk_site, pk_content, slug_content) => {
+model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
     return new Promise((resolve, reject) => {
         model
             .findPkBySlug(fk_site, pk_content, slug_content)
             .then(pk_content => {
-                async.parallel({
-                    content_data: (callback) => { //основная инфа
-                        mysql
-                            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
-                                fk_site,
-                                pk_content
-                            })
-                            .then(rows => {
-                                callback(null, rows[0]);
-                            })
-                            .catch(err => {
-                                if (err === EMPTY_SQL) {
-                                    callback(null, {});
-                                } else {
-                                    callback(err);
-                                }
-                            });
-                    },
-                    content_tags: (callback) => { //теги
-                        mysql
-                            .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
-                                pk_content
-                            })
-                            .then(rows => {
-                                callback(null, rows);
-                            })
-                            .catch(err => {
-                                if (err === EMPTY_SQL) {
-                                    callback(null, {});
-                                } else {
-                                    callback(err);
-                                }
-                            });
-                    }
-                }, (err, results) => {
-                    if (err) {
-                        errorlog(err);
-                        return reject(err);
-                    }
-
-                    //если есть данные - собрать в однотипное представление данных
-                    if (!empty(results.content_data)) {
-                        results.content_data.tags = [];
-
-                        for (let i = 0; i < results.content_tags.length; i++) {
-                            results.content_data.tags.push({
-                                id: results.content_tags[i].pk_tag,
-                                label: results.content_tags[i].name_tag
-                            });
+                return new Promise((resolve, reject) => {
+                    async.parallel({
+                        content_data: (callback) => { //основная инфа
+                            // не выбраны еще основные поля выборки
+                            mysql
+                                .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
+                                    " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`," +
+                                    " `status_content`, `fk_user_created`, count(ip) AS views" +
+                                    " FROM `" + TABLE_NAME + "`" +
+                                    " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
+                                    " WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
+                                    fk_site,
+                                    pk_content
+                                })
+                                .then(rows => {
+                                    callback(null, rows[0]);
+                                })
+                                .catch(err => {
+                                    if (err === EMPTY_SQL) {
+                                        callback(null, {});
+                                    } else {
+                                        callback(err);
+                                    }
+                                });
+                        },
+                        content_tags: (callback) => { //теги
+                            mysql
+                                .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
+                                    pk_content
+                                })
+                                .then(rows => {
+                                    callback(null, rows);
+                                })
+                                .catch(err => {
+                                    if (err === EMPTY_SQL) {
+                                        callback(null, {});
+                                    } else {
+                                        callback(err);
+                                    }
+                                });
                         }
-                    }
+                    }, (err, results) => {
+                        if (err) {
+                            errorlog(err);
+                            return reject(err);
+                        }
 
-                    resolve(results.content_data);
+                        //если есть данные - собрать в однотипное представление данных
+                        if (!empty(results.content_data)) {
+                            results.content_data.tags = [];
+
+                            for (let i = 0; i < results.content_tags.length; i++) {
+                                results.content_data.tags.push({
+                                    id: results.content_tags[i].pk_tag,
+                                    label: results.content_tags[i].name_tag
+                                });
+                            }
+                        }
+
+                        resolve(results.content_data);
+                    });
                 });
+            })
+            .then(data => { // найти изображения галерей
+                return new Promise((resolve) => {
+                    if (params.withimages > 0) {
+                        const ids = getIdsFromShortcodes(data.text_content);
 
+                        // дождаться инфы о файлах и отправить ответ
+                        uploadFilesModel
+                            .findApi(fk_site, 0, ids)
+                            .then(images => {
+                                let ret_images = {};
+
+                                for (let i = 0; i < images.length; i++) {
+                                    // pk_file можно удалить
+                                    ret_images[images[i].pk_file] = images[i];
+                                }
+
+                                resolve({
+                                    data,
+                                    images: ret_images
+                                });
+                            })
+                            .catch(() => { // ошибка - слать ответ
+                                resolve({
+                                    data,
+                                    images: {}
+                                });
+                            });
+                    } else {
+                        resolve({data});
+                    }
+                });
+            })
+            .then(data => { // найти связанные новости
+                if (params.wlc === false) {
+                    resolve(data.data);
+                } else {
+                    let html = decodeHtml(data.data.text_content);
+                    let widget_lc_ids = [];
+
+                    // есть связанные новости
+                    if (html.includes('[widgetLinkedContent')) {
+                        html.replace(/\[widgetLinkedContent([^\]]*)\]/g, (u, data_widget_lc) => {
+                            widget_lc_ids.push(parseInt(data_widget_lc.match(/\d+/)[0], 10));
+                        });
+
+                        let farr = [];
+
+                        for (let i = 0; i < widget_lc_ids.length; i++) {
+                            farr.push(
+                                function (callback) {
+                                    model
+                                        .findOne(fk_site, widget_lc_ids[i], slug_content, {
+                                            withimages: 0,
+                                            wlc: false
+                                        }) // быстрое решение рекурсии
+                                        .then(data => {
+                                            callback(null, {data});
+                                        })
+                                        .catch(err => {
+                                            callback(err)
+                                        });
+                                }
+                            );
+                        }
+
+                        // получить все синхронно
+                        async.parallel(farr, (err, results) => {
+                            if (err) {
+                                resolve({
+                                    data: data.data,
+                                    images: data.images,
+                                });
+                            }
+
+                            let result_lc = {};
+
+                            for (let i = 0; i < results.length; i++) {
+                                result_lc[results[i].data.pk_content] = results[i].data;
+                            }
+
+                            resolve({
+                                data: data.data,
+                                images: data.images,
+                                linked_content: result_lc
+                            });
+                        });
+                    } else {
+                        resolve({
+                            data: data.data,
+                            images: data.images,
+                        });
+                    }
+                }
             })
             .catch(err => {
                 errorlog(err);
@@ -99,7 +209,7 @@ model.findOne = (fk_site, pk_content, slug_content) => {
  * find pk of content by slug
  * returns faster if pk already set
  *
- * @param fk_site
+ * @param {int} fk_site - required
  * @param pk_content
  * @param slug_content
  * @returns {Promise}
@@ -483,20 +593,40 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
 
 /**
  * sets an increment view for content
+ * allows to do any logic
+ *
+ * set once a day?
  *
  * @param {int} fk_site         - ид сайта
- * @param {int} pk_content      - ид контента
+ * @param {int} pk_content      - ид контента или
  * @param {String} slug_content - slug content
  */
 model.incrViews = (fk_site, pk_content, slug_content) => {
     return new Promise((resolve, reject) => {
         model
             .findPkBySlug(fk_site, pk_content, slug_content)
-            .then(pk_content => {
-                mysql
-                    .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET views = views + 1 WHERE `pk_content` = :pk_content AND `fk_site` = :fk_site", {
+            /**.then(pk_content => {
+                mysql // SELECT INET6_NTOA(ip)
+                    .getSqlQuery("SELECT INET6_NTOA(ip), timestamp FROM `" + TABLE_NAME_VIEWS + "`" +
+                        " WHERE `ip` = INET6_ATON(:ip) AND `fk_content` = :pk_content" +
+                        " AND `timestamp` <= :timestamp;", {
                         pk_content,
-                        fk_site
+                        ip          : ip.address(),
+                        timestamp   : moment(Date.now()).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss')
+                    })
+                    .then(data => {
+                        console.log(data, moment(Date.now()).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss'));
+                        resolve(true);
+                    })
+                    .catch(() => {
+                        resolve(false);
+                    });
+            })*/
+            .then(pk_content => {
+                mysql // SELECT INET6_NTOA(ip)
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
+                        pk_content,
+                        ip: ip.address()
                     })
                     .then(() => {
                         resolve(true);

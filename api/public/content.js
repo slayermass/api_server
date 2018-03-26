@@ -1,10 +1,8 @@
 const router = require('express').Router(),
-    functions = require('../../functions'),
     BadRequestError = require('../../functions').BadRequestError,
     async = require('async'),
     decodeHtml = require('../../functions').decodeHtml,
-    model = require('../../models/mysql/content'),
-    uploadFilesModel = require('../../models/mysql/upload_files');
+    model = require('../../models/mysql/content');
 
 /**
  * getting content for public site (index page)
@@ -63,96 +61,15 @@ router.get('/contentone', (req, res, next) => {
         next(BadRequestError());
     } else {
         model
-            .findOne(fk_site, pk_content, slug_content)
-            .then(data => {
-                return new Promise((resolve, reject) => {
-                    if (withimages > 0) {
-                        const ids = getIdsFromShortcodes(data.text_content);
-
-                        // дождаться инфы о файлах и отправить ответ
-                        uploadFilesModel
-                            .findApi(fk_site, 0, ids)
-                            .then(images => {
-                                let ret_images = {};
-
-                                for (let i = 0; i < images.length; i++) {
-                                    // pk_file можно удалить
-                                    ret_images[images[i].pk_file] = images[i];
-                                }
-
-                                resolve({
-                                    data,
-                                    images: ret_images
-                                });
-                            })
-                            .catch(() => { // ошибка - слать ответ
-                                resolve({
-                                    data,
-                                    images: {}
-                                });
-                            });
-
-                    } else {
-                        resolve({
-                            data
-                        });
-                    }
-                });
+            .findOne(fk_site, pk_content, slug_content, {
+                withimages
             })
             .then(data => {
-                let html = decodeHtml(data.data.text_content);
-                let widget_lc_ids = [];
-
-                // есть связанные новости
-                if (html.includes('[widgetLinkedContent')) {
-                    html.replace(/\[widgetLinkedContent([^\]]*)\]/g, (u, data_widget_lc) => {
-                        widget_lc_ids.push(parseInt(data_widget_lc.match(/\d+/)[0], 10));
-                    });
-
-                    let farr = [];
-
-                    for (let i = 0; i < widget_lc_ids.length; i++) {
-                        farr.push(
-                            function (callback) {
-                                model
-                                    .findOne(fk_site, widget_lc_ids[i], slug_content)
-                                    .then(data => {
-                                        callback(null, {data});
-                                    })
-                                    .catch(err => {
-                                        callback(err)
-                                    });
-                            }
-                        );
-                    }
-
-                    // получить все синхронно
-                    async.parallel(farr, (err, results) => {
-                        if (err) {
-                            res.send({
-                                data: data.data,
-                                images: data.images,
-                            });
-                        }
-
-                        let result_lc = {};
-
-                        for (let i = 0; i < results.length; i++) {
-                            result_lc[results[i].data.pk_content] = results[i].data;
-                        }
-
-                        res.send({
-                            data: data.data,
-                            images: data.images,
-                            linked_content: result_lc
-                        });
-                    });
-                } else {
-                    res.send({
-                        data: data.data,
-                        images: data.images,
-                    });
-                }
+                res.send({
+                    data: data.data,
+                    images: data.images,
+                    linked_content: data.linked_content
+                });
 
                 // увеличить просмотр
                 model.incrViews(fk_site, pk_content, slug_content);
@@ -164,29 +81,3 @@ router.get('/contentone', (req, res, next) => {
 });
 
 module.exports = router;
-
-/**
- * вычленять из текста куски шорткодов(файлы, изображения)
- *
- * @param {HTML} html
- * @returns {Array}
- */
-function getIdsFromShortcodes(html) {
-    let return_ids = [];
-
-    html = decodeHtml(html);
-
-    if (html.includes('[gallery')) {
-        // обычно в теге <p> tinymce создает
-        html.replace(/<p>\[gallery([^\]]*)\]<\/p>/g, (all, ids) => {
-            ids = ids.split('"');
-            ids = ids[1].split(',');
-
-            for (let i = 0; i < ids.length; i++) {
-                return_ids.push(parseInt(ids[i], 10));
-            }
-        });
-    }
-
-    return return_ids;
-}

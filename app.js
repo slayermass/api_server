@@ -24,10 +24,6 @@ app.disable('x-powered-by');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-/**app.get('/', function(req, res){//загрузчик многих фото
-    res.sendFile(path.join(__dirname, 'views/index.html'));
-});*/
-
 app.use('/api', require('./api/protected'));//закрытое api
 app.use('/papi', require('./api/public'));//публичное api
 
@@ -43,14 +39,6 @@ app.use(function (err, req, res, next) {
     errorlog(err);
     console.log(err);
 });
-
-/**app.get('/canvas', function(req, res){
-    res.sendFile(path.join(__dirname, 'views/canvas.html'));
-});
-
-app.get('/cropper', function(req, res){//загрузчик и обрезчик
-    res.sendFile(path.join(__dirname, 'views/cropper.html'));
-});*/
 
 const server = app.listen(port, function(){
   console.log('Server listening on port ' + port);

@@ -82,3 +82,29 @@ module.exports.InternalServerError = (msg = '') => {
     err.status = 450;
     return err;
 };
+
+/**
+ * вычленять из текста куски шорткодов(файлы, изображения)
+ *
+ * @param {HTML} html
+ * @returns {Array}
+ */
+module.exports.getIdsFromShortcodes = (html) => {
+    let return_ids = [];
+
+    html = module.exports.decodeHtml(html);
+
+    if (html.includes('[gallery')) {
+        // обычно в теге <p> tinymce создает
+        html.replace(/<p>\[gallery([^\]]*)\]<\/p>/g, (all, ids) => {
+            ids = ids.split('"');
+            ids = ids[1].split(',');
+
+            for (let i = 0; i < ids.length; i++) {
+                return_ids.push(parseInt(ids[i], 10));
+            }
+        });
+    }
+
+    return return_ids;
+}

@@ -16,10 +16,13 @@
     "body-parser": "^1.18.2",
     "compression": "^1.7.0",
     "del": "^3.0.0",
+    "esdoc": "^1.0.4",
+    "esdoc-standard-plugin": "^1.0.0",
     "express": "^4.15.4",
     "file-type": "^6.1.0",
     "formidable": "^1.0.17",
     "html-entities": "^1.2.1",
+    "ip": "^1.1.5",
     "is-empty": "^1.2.0",
     "log": "^1.4.0",
     "mime-types": "^2.1.17",
@@ -28,7 +31,6 @@
     "mysql": "^2.14.1",
     "path-exists": "^3.0.0",
     "read-chunk": "^2.1.0",
-    "request-ip": "^2.0.2",
     "transliteration": "^1.6.2"
   }
 }
