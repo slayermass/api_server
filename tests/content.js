@@ -4,9 +4,8 @@ process.env.NODE_ENV = 'test';
 
 let chai = require('chai');
 let chaiHttp = require('chai-http');
-// let server = require('../app');
+let server = require('../app');
 const auth_id = require("../config/index").auth_id;
-const local_server = 'http://127.0.0.1:3001';
 
 chai.should();
 
@@ -16,7 +15,7 @@ describe('Контент', () => {
 
     describe('/GET /papi/contentone', () => {
         it('(public) Получение контента и формат, slug_content', (done) => {
-            chai.request(local_server)
+            chai.request(server)
                 .get('/papi/contentone')
                 .query({
                     "fk_site": 1,
@@ -31,7 +30,7 @@ describe('Контент', () => {
 
     describe('/GET /papi/contentone', () => {
         it('(public) Получение контента и формат, pk_content', (done) => {
-            chai.request(local_server)
+            chai.request(server)
                 .get('/papi/contentone')
                 .query({
                     "fk_site": 1,
@@ -46,7 +45,7 @@ describe('Контент', () => {
 
     describe('/GET /api/contentone', () => {
         it('(private) Получение контента и формат, slug_content', (done) => {
-            chai.request(local_server)
+            chai.request(server)
                 .get('/api/contentone')
                 .set('auth_id', auth_id)
                 .query({
@@ -61,7 +60,7 @@ describe('Контент', () => {
 
     describe('/GET /api/contentone', () => {
         it('(private) Получение контента и формат, pk_content', (done) => {
-            chai.request(local_server)
+            chai.request(server)
                 .get('/api/contentone')
                 .set('auth_id', auth_id)
                 .query({

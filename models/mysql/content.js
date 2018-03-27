@@ -603,23 +603,6 @@ model.incrViews = (fk_site, pk_content, slug_content, req) => {
     return new Promise((resolve, reject) => {
         model
             .findPkBySlug(fk_site, pk_content, slug_content)
-            /**.then(pk_content => {
-                mysql // SELECT INET6_NTOA(ip)
-                    .getSqlQuery("SELECT INET6_NTOA(ip), timestamp FROM `" + TABLE_NAME_VIEWS + "`" +
-                        " WHERE `ip` = INET6_ATON(:ip) AND `fk_content` = :pk_content" +
-                        " AND `timestamp` <= :timestamp;", {
-                        pk_content,
-                        ip          : ip.address(),
-                        timestamp   : moment(Date.now()).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss')
-                    })
-                    .then(data => {
-                        console.log(data, moment(Date.now()).subtract(1, 'days').format('YYYY-MM-DD HH:mm:ss'));
-                        resolve(true);
-                    })
-                    .catch(() => {
-                        resolve(false);
-                    });
-            })*/
             .then(pk_content => {
                 mysql // SELECT INET6_NTOA(ip)
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
@@ -633,8 +616,29 @@ model.incrViews = (fk_site, pk_content, slug_content, req) => {
                         resolve(false);
                     });
             })
-            .catch(err => {
+            .catch(() => {
                 reject(false);
+            });
+    });
+};
+
+/**
+ * обновление контента с отложенной публикацией (опубликован)
+ * для регулярного вызова
+ *
+ * @returns {Promise}
+ */
+model.checkPublishUpdate = () => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `status_content` = 1 WHERE `status_content` = 3 AND `publish_date` <= :publish_date;", {
+                publish_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
+            })
+            .then(data => {
+                resolve(data.affectedRows);
+            })
+            .catch(() => {
+                reject();
             });
     });
 };

@@ -12,7 +12,7 @@ let mysql      = require('mysql'),
  * @param {Object} data - параметр для биндинга к sql
  * @returns {Promise}
  */
-exports.getSqlQuery = (sql, data) => {
+exports.getSqlQuery = (sql, data = {}) => {
     return new Promise(function(resolve, reject) {
         connection.query(sql, data, function(err, rows) {
             if(err){
