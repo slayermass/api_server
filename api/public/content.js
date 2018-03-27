@@ -1,7 +1,5 @@
 const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
-    async = require('async'),
-    decodeHtml = require('../../functions').decodeHtml,
     model = require('../../models/mysql/content');
 
 /**
@@ -52,7 +50,7 @@ router.get('/contentone', (req, res, next) => {
     let fk_site = parseInt(req.query.fk_site, 10),
         pk_content = parseInt(req.query.pk_content, 10),
         slug_content = req.query.slug_content,
-        withimages = parseInt(req.query.withimages, 10) || 0; // найти ид файлов и выдать ссылки на них вместе c результатом
+        withimages = parseInt(req.query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
 
     if (
         (isNaN(fk_site) || fk_site < 1) ||

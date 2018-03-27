@@ -1,7 +1,6 @@
 const router = require('express').Router(),
     functions = require('../../functions'),
     BadRequestError = require('../../functions').BadRequestError,
-    InternalServerError = require('../../functions').InternalServerError,
     contentModel = require('../../models/mysql/content');
 
 /**
@@ -24,7 +23,7 @@ router.get('/contentone', (req, res, next) => {
             .findOne(fk_site, pk_content, slug_content)
             .then(data => {
                 res.send({
-                    data
+                    data: data.data
                 });
             })
             .catch(err => {

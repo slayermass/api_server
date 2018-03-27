@@ -1,4 +1,5 @@
 let router = require('express').Router();
+const auth_id = require("../../config/index").auth_id;
 /*const
     requestIp = require('request-ip'),
     allowIps = ['::1', '::ffff:109.195.33.201'];*/
@@ -11,7 +12,7 @@ let router = require('express').Router();
  * + проверка на обяз параметр fk_site
  */
 router.all('/*', function (req, res, next) {
-    if(req.headers.auth_id === '666uniqrandomsmid666' || req.method === 'OPTIONS') {
+    if (req.headers.auth_id === auth_id || req.method === 'OPTIONS') {
         next();
     } else {
         let err = new Error('Access Denied');
