@@ -4,12 +4,7 @@ let sites = function(){};
 
 const
     TABLE_NAME = 'sites',
-    mysql = require('../../db/mysql'),
-    Entities = require('html-entities').XmlEntities,
-    entities = new Entities(),
-    errorlog = require('../../functions').error,
-    async = require('async'),
-    EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
+    mysql = require('../../db/mysql');
 
 mysql.formatBind();
 
@@ -24,7 +19,6 @@ sites.getAll = () => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             });
     });

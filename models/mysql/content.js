@@ -249,7 +249,6 @@ model.delete = (delArr) => {
                 });
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -433,13 +432,11 @@ model.update = (cobj, fk_site) => {
                                 }
                             })
                             .catch(err => {
-                                errorlog(err);
                                 reject(err);
                             });
                     });
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -543,7 +540,6 @@ model.save = (cobj, fk_site) => {
                         }
                     })
                     .catch(err => {
-                        errorlog(err);
                         reject(err);
                     });
             });
@@ -602,6 +598,8 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * @param {String} slug_content - slug content
  */
 model.incrViews = (fk_site, pk_content, slug_content, req) => {
+    const ip = requestIp.getClientIp(req);
+
     return new Promise((resolve, reject) => {
         model
             .findPkBySlug(fk_site, pk_content, slug_content)
@@ -626,7 +624,7 @@ model.incrViews = (fk_site, pk_content, slug_content, req) => {
                 mysql // SELECT INET6_NTOA(ip)
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
                         pk_content,
-                        ip: requestIp.getClientIp(req)
+                        ip
                     })
                     .then(() => {
                         resolve(true);
@@ -636,7 +634,6 @@ model.incrViews = (fk_site, pk_content, slug_content, req) => {
                     });
             })
             .catch(err => {
-                errorlog(err);
                 reject(false);
             });
     });

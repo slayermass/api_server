@@ -4,9 +4,7 @@ let model = function(){};
 
 const
     TABLE_NAME = 'r_content_to_tags',
-    mysql = require('../../db/mysql'),
-    errorlog = require('../../functions').error,
-    EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
+    mysql = require('../../db/mysql');
 
 mysql.formatBind();
 
@@ -39,13 +37,11 @@ model.save = (fk_content, fk_tags) => {
                         mysql.formatBind();
                     })
                     .catch(err => {
-                        errorlog(err);
                         reject(err);
                         mysql.formatBind();
                     });
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
                 mysql.formatBind();
             });

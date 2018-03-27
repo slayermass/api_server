@@ -53,7 +53,6 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
                         });
                     })
                     .catch(err => {
-                        errorlog(err);
                         callback(err)
                     })
             },
@@ -95,7 +94,6 @@ upload_files.newByLink = (fk_site, path, original_name_file) => {
                 resolve(row[0]);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             })
     });
@@ -118,7 +116,6 @@ upload_files.findByNameFile = (name_file) => {
                 resolve(row[0]);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             })
     });
@@ -149,7 +146,6 @@ upload_files.findPathByIds = (fk_site, pk_files) => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             });
     });
@@ -180,7 +176,6 @@ upload_files.findPathByNames = (fk_site, name_files) => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             });
     });
@@ -209,7 +204,6 @@ upload_files.deleteByNames = (name_files) => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             })
     });
@@ -238,7 +232,6 @@ upload_files.deleteByIds = (pk_files) => {
                 resolve(rows);
             })
             .catch(err => {
-                errorlog(err);
                 reject();
             })
     });
@@ -295,7 +288,6 @@ upload_files.findApi = (fk_site, limit, pk_files, folder = null) => {
                 if(err === EMPTY_SQL) {
                     resolve([]);
                 } else {
-                    errorlog(err);
                     reject();
                 }
             })
@@ -355,8 +347,7 @@ upload_files.getInfoFile = (fk_site, pk_file) => {
                     });
                 }
             })
-            .catch(err => {
-                errorlog(err);
+            .catch(() => {
                 reject();
             });
     });

@@ -70,7 +70,6 @@ router.get('/contentone', (req, res, next) => {
                     images: data.images,
                     linked_content: data.linked_content
                 });
-
                 // увеличить просмотр
                 model.incrViews(fk_site, pk_content, slug_content, req);
             })

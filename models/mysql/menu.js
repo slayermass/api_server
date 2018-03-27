@@ -11,7 +11,6 @@ const
     errorlog = require('../../functions').error,
     async = require('async'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
-    empty = require('is-empty'),
     addWhere = require('../../functions').addWhere;
 
 mysql.formatBind();
@@ -109,7 +108,6 @@ model.findOne = (fk_site, pk_menu) => {
                 if (err === EMPTY_SQL) {
                     resolve({});
                 } else {
-                    errorlog(err);
                     reject(err);
                 }
             });
@@ -136,7 +134,6 @@ model.updateOne = (fk_site, menu) => {
                 resolve();
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -160,7 +157,6 @@ model.createOne = (fk_site, menu) => {
                 resolve();
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -184,7 +180,6 @@ model.deleteOne = (fk_site, pk_menu) => {
                 resolve();
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });

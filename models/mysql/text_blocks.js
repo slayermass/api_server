@@ -59,7 +59,6 @@ model.create = (text_block, fk_site) => {
                         });
                     })
                     .catch(err => {
-                        errorlog(err);
                         reject(err);
                     });
             })
@@ -309,7 +308,6 @@ model.delete = (delArr) => {
                 });
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });

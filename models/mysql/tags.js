@@ -55,11 +55,9 @@ model.checkSave = (fk_site, tags) => {
                                     });
                                 })
                                 .catch(err => {
-                                    errorlog(err);
                                     callback(err)
                                 });
                         } else {
-                            errorlog(err);
                             callback(err);
                         }
                     });
@@ -97,7 +95,6 @@ model.getAllBySite = (fk_site, limit, offset) => {
                 if(err === EMPTY_SQL) {
                     resolve();
                 } else {
-                    errorlog(err);
                     reject();
                 }
             });
@@ -123,7 +120,6 @@ model.findByName = (fk_site, name) => {
                 if(err === EMPTY_SQL) {
                     resolve([]);
                 } else {
-                    errorlog(err);
                     reject();
                 }
             });

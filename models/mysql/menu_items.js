@@ -52,7 +52,6 @@ model.findAll = (fk_site, pk_menu, label_menu) => {
                 if (err === EMPTY_SQL) {
                     resolve({});
                 } else {
-                    errorlog(err);
                     reject(err);
                 }
             });
@@ -81,7 +80,6 @@ model.updateOne = (menu_item, pk_menu) => {
                 resolve(true);
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -110,7 +108,6 @@ model.createOne = (menu_item, pk_menu) => {
                 });
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });
@@ -134,7 +131,6 @@ model.deleteOne = (fk_site, pk_menu, pk_menu_item) => {
                 resolve(true);
             })
             .catch(err => {
-                errorlog(err);
                 reject(err);
             });
     });

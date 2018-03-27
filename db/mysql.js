@@ -3,6 +3,7 @@
 let mysql      = require('mysql'),
     mysql_config = require('../config/mysql_config'),
     connection = mysql.createConnection(mysql_config.config),
+    errorlog = require('../functions').error,
     EMPTY_SQL = require('../config/mysql_config').EMPTY_SQL;
 
 /**
@@ -15,6 +16,7 @@ exports.getSqlQuery = (sql, data) => {
     return new Promise(function(resolve, reject) {
         connection.query(sql, data, function(err, rows) {
             if(err){
+                errorlog(err);
                 reject(err);
             } else {
                 if(rows.length === 0){//пустой ответ
