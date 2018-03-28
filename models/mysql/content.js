@@ -257,22 +257,23 @@ model.delete = (delArr) => {
 /**
  * поиск, получение контента
  *
- * @param {int} fk_site         - ид сайта
  * @param {Object} params       - параметры
+ *      @param {int} fk_site    - ид сайта (@required)
  *      @param {int} limit      - кол-во записей для поиска
  *      @param {int} offset     - отступ для поиска
  *      @param {int} orderby    - сортировка
  *      @param {int} isdeleted  - выводить удаленные(0 - нет, 1 - да, -1 - все)
- *      @param {int} status     - статус контента
- * @param {Object} search       - пользовательский поиск по параметрам {val: значение, type: тип поля}
- * @param {int} withcount       - включить ли вывод кол-ва записей}
+ *      @param {int} status     - статус контента (0 - весь)
+ *      @param {Object} search  - пользовательский поиск по параметрам {val: значение, type: тип поля}
+ *      @param {int} withcount  - включить ли вывод кол-ва записей}
  */
-model.find = (fk_site, params, search, withcount) => {
-    let add_where = addWhere(search),
-        leftJoin = '';
+model.find = (params) => {
+    let add_where = addWhere(params.search),
+        leftJoin = '',
+        orderby = (params.orderby) ? params.orderby : 'pk_content DESC';
 
     // указан статус
-    if (params.status !== 0) {
+    if (params.status > 0) {
         add_where += ' AND `status_content` = :status_content';
     }
 
@@ -295,9 +296,9 @@ model.find = (fk_site, params, search, withcount) => {
                 mysql
                     .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "`" + leftJoin +
                         " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site " + add_where +
-                        " ORDER BY " + params.orderby + " LIMIT :limit OFFSET :offset"
+                        " ORDER BY " + orderby + " LIMIT :limit OFFSET :offset"
                         , {
-                            fk_site,
+                            fk_site: params.fk_site,
                             limit: params.limit,
                             isdeleted: params.isdeleted,
                             status_content: params.status,
@@ -316,7 +317,7 @@ model.find = (fk_site, params, search, withcount) => {
                     });
             },
             content_count: (callback) => { //кол-во записей
-                if (withcount === 1) {
+                if (params.withcount === 1) {
                     mysql
                         .getSqlQuery("SELECT COUNT(*) AS count, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countstatus0, " +
@@ -324,7 +325,7 @@ model.find = (fk_site, params, search, withcount) => {
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2, " +
                             "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 3) AS countstatus3 " +
                             "FROM `" + TABLE_NAME + "`", {
-                            fk_site
+                            fk_site: params.fk_site,
                             })
                         .then(row => {
                             callback(null, {
