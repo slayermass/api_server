@@ -33,69 +33,47 @@ router.get('/content', async ({query}, res, next) => {
 });
 
 /**
- * getting content for public site by slug
+ * getting content for public site by slug or pk_content
  *
  * + sets a view
  *
  * @see contentModel.findOne
  */
 router.get('/contentone', async (req, res, next) => {
-    let fk_site = parseInt(req.query.fk_site, 10),
-        pk_content = parseInt(req.query.pk_content, 10),
-        slug_content = req.query.slug_content || '',
-        withimages = parseInt(req.query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
+    let query = req.query;
+
+    // validate
+    query.fk_site = parseInt(query.fk_site, 10);
+    query.pk_content = parseInt(query.pk_content, 10) || 0;
+    query.slug_content = query.slug_content || '';
+    query.withimages = parseInt(query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
 
     if (
-        (isNaN(fk_site) || fk_site < 1) ||
-        ((isNaN(pk_content) || pk_content < 1) && slug_content.length < 1)
+        (isNaN(query.fk_site) || query.fk_site < 1) ||
+        ((isNaN(query.pk_content) || query.pk_content < 1) && query.slug_content.length < 1)
     ) {
         next(BadRequestError());
     } else {
         // простейший кэш для тестов
         if (!empty(contentCache) &&
-            (contentCache.data.slug_content === slug_content || contentCache.data.pk_content === pk_content)
+            (contentCache.data.slug_content === query.slug_content || contentCache.data.pk_content === query.pk_content)
         ) {
             res.send(contentCache);
         } else {
             // end простейший кэш для тестов
             try {
-                let data = await model.findOne(fk_site, pk_content, slug_content, {withimages});
+                let data = await model.findOne(query);
 
                 res.send(data);
 
                 contentCache = Object.assign({}, data);
-
-                // увеличить просмотр
-                model.incrViews(fk_site, pk_content, slug_content, req);
             } catch (err) {
                 next(err);
             }
-
-            // Promise.then()
-            /**
-             model
-             .findOne(fk_site, pk_content, slug_content, {
-                    withimages
-                })
-             .then(data => {
-                    res.send({
-                        data: data.data,
-                        images: data.images,
-                        linked_content: data.linked_content
-                    });
-
-                    contentCache = {
-                        data: data.data,
-                        images: data.images,
-                        linked_content: data.linked_content
-                    };
-                    // увеличить просмотр
-                    model.incrViews(fk_site, pk_content, slug_content, req);
-                })
-             .catch(err => {
-                    next(err);
-                });*/
         }
+
+        // увеличить просмотр
+        model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
     }
 });
 

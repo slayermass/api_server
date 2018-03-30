@@ -4,35 +4,36 @@ const router = require('express').Router(),
     contentModel = require('../../models/mysql/content');
 
 /**
- * получение контента по ид
+ * getting content for public site by slug or pk_content
  *
  * @see contentModel.findOne
  */
-router.get('/contentone', (req, res, next) => {
-    let fk_site = parseInt(req.query.fk_site, 10),
-        pk_content = parseInt(req.query.pk_content, 10),
-        slug_content = req.query.slug_content;
+router.get('/contentone', async (req, res, next) => {
+    let query = req.query;
+
+    // validate
+    query.fk_site = parseInt(query.fk_site, 10);
+    query.pk_content = parseInt(query.pk_content, 10) || 0;
+    query.slug_content = query.slug_content || '';
 
     if (
-        (isNaN(fk_site) || fk_site < 1) ||
-        ((isNaN(pk_content) || pk_content < 1) && slug_content.length < 1)
+        (isNaN(query.fk_site) || query.fk_site < 1) ||
+        ((isNaN(query.pk_content) || query.pk_content < 1) && query.slug_content.length < 1)
     ) {
         next(BadRequestError());
     } else {
-        contentModel
-            .findOne(fk_site, pk_content, slug_content)
-            .then(data => {
-                res.send({
-                    data: data.data
-                });
-            })
-            .catch(err => {
-                next(err);
-            });
+        try {
+            let data = await contentModel.findOne(query);
+
+            res.send(data);
+        } catch (err) {
+            next(err);
+        }
     }
 });
 
 /**
+ * @rewrite
  * удаление контента по ид
  *
  * @see contentModel.delete
@@ -62,37 +63,30 @@ router.delete('/content', (req, res, next) => {
  *
  * @see contentModel.find
  */
-router.get('/content', (req, res, next) => {
-    let limit = parseInt(req.query.limit, 10) || 20,
-        fk_site = parseInt(req.query.fk_site, 10),
-        isdeleted = parseInt(req.query.isdeleted, 10) || -1,
-        status = parseInt(req.query.status, 10) || 0,
-        orderby = (req.query.orderby) ? req.query.orderby : 'pk_content DESC',
-        withcount = parseInt(req.query.withcount, 10) || 0,
-        offset = parseInt(req.query.offset, 10) || 0,
-        search = req.query.search || {};
+router.get('/content', async ({query}, res, next) => {
+    // validate
+    query.limit = parseInt(query.limit, 10) || 20;
+    query.fk_site = parseInt(query.fk_site, 10);
+    query.isdeleted = parseInt(query.isdeleted, 10) || -1;
+    query.status = parseInt(query.status, 10) || 0;
+    query.withcount = parseInt(query.withcount, 10) || 0;
+    query.offset = parseInt(query.offset, 10) || 0;
 
-    if (isNaN(fk_site) || fk_site < 1) {
+    if (isNaN(query.fk_site) || query.fk_site < 1) {
         next(BadRequestError());
     } else {
-        contentModel
-            .find(fk_site, {
-                limit,
-                orderby,
-                isdeleted,
-                status,
-                offset
-            }, search, withcount)
-            .then(data => {
-                res.send(data);
-            })
-            .catch(err => {
-                next(err);
-            });
+        try {
+            let data = await contentModel.find(query);
+
+            res.send(data);
+        } catch (err) {
+            next(err);
+        }
     }
 });
 
 /**
+ * @rewrite
  * создание/обновление контента
  *
  * @see contentModel.save

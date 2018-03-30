@@ -29,17 +29,21 @@ mysql.formatBind();
  * сначала получить ид контента, если указана метка (+запрос)
  * уменьшение кол-ва запросов, желательно до 1
  *
- * @param {int} fk_site         - ид сайта
- * @param {int} pk_content      - ид контента
- * @param {String} slug_content - метка контента
- * @param {Object} params       - доп параметры
- *      {int} withimages        - включить ли изображения галерей
- *      {bool} wlc              - не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
+ * @param {Object} params            - доп параметры
+ *      @param {int} fk_site         - ид сайта - required
+ *      @param {int} pk_content      - ид контента
+ *      @param {String} slug_content - метка контента
+ *      @param {int} withimages      - включить ли изображения галерей
+ *      @param {bool} wlc            - (true)не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
  */
-model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
+model.findOne = (params) => {
+    if (params.wlc === undefined) {
+        params.wlc = false;
+    }
+
     return new Promise((resolve, reject) => {
         model
-            .findPkBySlug(fk_site, pk_content, slug_content)
+            .findPkBySlug(params.fk_site, params.pk_content, params.slug_content)
             .then(pk_content => {
                 return new Promise((resolve, reject) => {
                     async.parallel({
@@ -52,7 +56,7 @@ model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
                                     " FROM `" + TABLE_NAME + "`" +
                                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                                     " WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
-                                    fk_site,
+                                    fk_site: params.fk_site,
                                     pk_content
                                 })
                                 .then(rows => {
@@ -111,7 +115,7 @@ model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
 
                         // дождаться инфы о файлах и отправить ответ
                         uploadFilesModel
-                            .findApi(fk_site, 0, ids)
+                            .findApi(params.fk_site, 0, ids)
                             .then(images => {
                                 let ret_images = {};
 
@@ -137,7 +141,7 @@ model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
                 });
             })
             .then(data => { // найти связанные новости
-                if (params.wlc === false) {
+                if (params.wlc === true) {
                     resolve(data.data);
                 } else {
                     let html = decodeHtml(data.data.text_content);
@@ -155,10 +159,13 @@ model.findOne = (fk_site, pk_content, slug_content, params = {}) => {
                             farr.push(
                                 function (callback) {
                                     model
-                                        .findOne(fk_site, widget_lc_ids[i], slug_content, {
+                                        .findOne({
+                                            fk_site: params.fk_site,
+                                            pk_content: widget_lc_ids[i],
+                                            slug_content: params.slug_content,
                                             withimages: 0,
-                                            wlc: false
-                                        }) // быстрое решение рекурсии
+                                            wlc: true // быстрое решение рекурсии
+                                        })
                                         .then(data => {
                                             callback(null, {data});
                                         })
@@ -598,29 +605,21 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * @param {int} pk_content      - ид контента или
  * @param {String} slug_content - slug content
  */
-model.incrViews = (fk_site, pk_content, slug_content, req) => {
+model.incrViews = async (fk_site, pk_content, slug_content, req) => {
     const ip = requestIp.getClientIp(req);
 
-    return new Promise((resolve, reject) => {
-        model
-            .findPkBySlug(fk_site, pk_content, slug_content)
-            .then(pk_content => {
-                mysql // SELECT INET6_NTOA(ip)
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
-                        pk_content,
-                        ip
-                    })
-                    .then(() => {
-                        resolve(true);
-                    })
-                    .catch(() => {
-                        resolve(false);
-                    });
-            })
-            .catch(() => {
-                reject(false);
+    try {
+        let pk_content_found = await model.findPkBySlug(fk_site, pk_content, slug_content);
+
+        await mysql // SELECT INET6_NTOA(ip)
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
+                pk_content: pk_content_found,
+                ip
             });
-    });
+        return true;
+    } catch (err) {
+        return false;
+    }
 };
 
 /**

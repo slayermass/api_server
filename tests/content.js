@@ -74,9 +74,30 @@ describe('Контент', () => {
     });
 
     describe('/GET /papi/content', () => {
-        it('(private) Получение контента и формат главной страницы', (done) => {
+        it('(public) Получение контента и формат главной страницы', (done) => {
             chai.request(server)
                 .get('/papi/content')
+                .set('auth_id', auth_id)
+                .query({
+                    "fk_site": 1,
+                    "status": 1
+                })
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('data');
+
+                    res.body.data.should.have.lengthOf.within(1, 20); // @see model.find -> params.limit
+
+                    done();
+                });
+        });
+    });
+
+    describe('/GET /api/content', () => {
+        it('(private) Получение контента и формат главной страницы', (done) => {
+            chai.request(server)
+                .get('/api/content')
                 .set('auth_id', auth_id)
                 .query({
                     "fk_site": 1,
