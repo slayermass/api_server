@@ -1,5 +1,5 @@
 const router = require('express').Router(),
-    functions = require('../../functions'),
+    doArray = require('../../functions').doArray,
     BadRequestError = require('../../functions').BadRequestError,
     contentModel = require('../../models/mysql/content');
 
@@ -8,9 +8,7 @@ const router = require('express').Router(),
  *
  * @see contentModel.findOne
  */
-router.get('/contentone', async (req, res, next) => {
-    let query = req.query;
-
+router.get('/contentone', async ({query}, res, next) => {
     // validate
     query.fk_site = parseInt(query.fk_site, 10);
     query.pk_content = parseInt(query.pk_content, 10) || 0;
@@ -33,26 +31,24 @@ router.get('/contentone', async (req, res, next) => {
 });
 
 /**
- * @rewrite
  * удаление контента по ид
  *
  * @see contentModel.delete
  */
-router.delete('/content', (req, res, next) => {
-    let delArr = functions.doArray(req.body.delArr);
+router.delete('/content', async ({body}, res, next) => {
+    let delArr = doArray(body.delArr);
 
     if (delArr.length) {
-        contentModel
-            .delete(delArr)
-            .then(count => {
-                res.send({
-                    success: true,
-                    count
-                });
-            })
-            .catch(err => {
-                next(err);
+        try {
+            let count = await contentModel.delete(delArr);
+
+            res.send({
+                success: true,
+                count
             });
+        } catch (err) {
+            next(err);
+        }
     } else {
         next(BadRequestError());
     }
@@ -91,31 +87,41 @@ router.get('/content', async ({query}, res, next) => {
  *
  * @see contentModel.save
  */
-router.post('/content', (req, res, next) => {
-    let content= {
-        title_content: req.body.content.title,
-        text_content: req.body.content.text,
-        intro_content: req.body.content.intro,
-        tags: req.body.content.tags,
-        status_content: parseInt(req.body.content.status, 10),
-        fk_user_created: parseInt(req.body.content.fk_user_created, 10),
-        headimgsrc_content: req.body.content.head_img_src,
-        pk_content: parseInt(req.body.content.pk_content, 10),
-        later_publish_time: req.body.content.later_publish_time
-    };
+router.post('/content', ({body}, res, next) => {
+    let content = {};
 
-    let fk_site = parseInt(req.body.fk_site, 10);
+    try {
+        // validate
+        body.fk_site = parseInt(body.fk_site, 10);
+        content = {
+            title_content: body.content.title,
+            text_content: body.content.text,
+            intro_content: body.content.intro,
+            tags: body.content.tags,
+            status_content: parseInt(body.content.status, 10) || 2,
+            fk_user_created: parseInt(body.content.fk_user_created, 10),
+            headimgsrc_content: body.content.head_img_src,
+            pk_content: parseInt(body.content.pk_content, 10),
+            later_publish_time: body.content.later_publish_time,
+            type_material: parseInt(body.content.type_material, 10)
+        };
+    } catch (e) {
+        next(BadRequestError());
+        return;
+    }
 
     //проверка
     if(content.title_content.length < 1 ||
         content.text_content.length < 1 ||
         (isNaN(content.fk_user_created) || content.fk_user_created < 1) ||
-        (isNaN(fk_site) || fk_site < 1)
+        (isNaN(body.fk_site) || body.fk_site < 1) ||
+        content.type_material < 1 ||
+        content.intro_content.length < 1
     ) {
         next(BadRequestError());
     } else if (content.pk_content) { //редактирование
         contentModel
-            .update(content, fk_site)
+            .update(content, body.fk_site)
             .then(data => {
                 res.send({
                     success: true,
@@ -127,7 +133,7 @@ router.post('/content', (req, res, next) => {
             });
     } else { // сохранение
         contentModel
-            .save(content, fk_site)
+            .save(content, body.fk_site)
             .then(data => {
                 res.send({
                     success: true,

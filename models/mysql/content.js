@@ -33,15 +33,126 @@ mysql.formatBind();
  *      @param {int} fk_site         - ид сайта - required
  *      @param {int} pk_content      - ид контента
  *      @param {String} slug_content - метка контента
- *      @param {int} withimages      - включить ли изображения галерей
+ *      @param {int} withimages      - включить ли изображения галерей(0,1)
  *      @param {bool} wlc            - (true)не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
  */
-model.findOne = (params) => {
+model.findOne = async (params) => {
     if (params.wlc === undefined) {
         params.wlc = false;
     }
 
-    return new Promise((resolve, reject) => {
+    try {
+        let data = {}; // основной объект ответа, дополняющийся данными
+
+        // найти основные данные
+        const pk_content = await model.findPkBySlug(params.fk_site, params.pk_content, params.slug_content);
+
+        let [content_data, content_tags] = await Promise.all([
+            await mysql
+                .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
+                    " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`," +
+                    " `status_content`, `fk_user_created`, count(ip) AS views" +
+                    " FROM `" + TABLE_NAME + "`" +
+                    " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
+                    " WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
+                    fk_site: params.fk_site,
+                    pk_content
+                }),
+            await mysql
+                .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
+                    pk_content
+                })
+        ]);
+
+        content_data = content_data[0];
+
+        //если есть данные - добавить туда теги
+        if (!empty(content_data)) {
+            content_data.tags = [];
+
+            for (let i = 0; i < content_tags.length; i++) {
+                content_data.tags.push({
+                    id: content_tags[i].pk_tag,
+                    label: content_tags[i].name_tag
+                });
+            }
+        }
+
+        content_tags = null;
+        data.data = content_data;
+        content_data = null;
+        // end найти основные данные
+
+
+        // найти изображения галерей
+        if (params.withimages > 0) {
+            const ids = getIdsFromShortcodes(data.data.text_content);
+
+            let images = await uploadFilesModel.findApi(params.fk_site, 0, ids);
+
+            let ret_images = {};
+
+            for (let i = 0; i < images.length; i++) {
+                // pk_file можно удалить
+                ret_images[images[i].pk_file] = images[i];
+            }
+
+            data.images = ret_images;
+        }
+        // end найти изображения галерей
+
+
+        // найти связанные новости
+        if (params.wlc === false) {
+            let html = decodeHtml(data.data.text_content);
+            let widget_lc_ids = [];
+
+            // есть связанные новости
+            if (html.includes('[widgetLinkedContent')) {
+                html.replace(/\[widgetLinkedContent([^\]]*)\]/g, (u, data_widget_lc) => {
+                    widget_lc_ids.push(parseInt(data_widget_lc.match(/\d+/)[0], 10));
+                });
+
+                let farr = [];
+
+                for (let i = 0; i < widget_lc_ids.length; i++) {
+                    farr.push(
+                        model
+                            .findOne({
+                                fk_site: params.fk_site,
+                                pk_content: widget_lc_ids[i],
+                                slug_content: params.slug_content,
+                                withimages: 0,
+                                wlc: true // быстрое решение рекурсии
+                            })
+                    );
+                }
+
+                let results = await Promise.all(farr);
+
+                let result_lc = {};
+
+                for (let i = 0; i < results.length; i++) {
+                    result_lc[results[i].data.pk_content] = results[i].data;
+                }
+
+                data.linked_content = result_lc;
+            }
+        }
+        // end найти связанные новости
+
+        return data;
+    } catch (err) {
+        if (err === EMPTY_SQL) {
+            return {};
+        } else {
+            throw new Error(err);
+        }
+    }
+
+
+    // TODO remove
+    /**return new Promise((resolve, reject) => {
         model
             .findPkBySlug(params.fk_site, params.pk_content, params.slug_content)
             .then(pk_content => {
@@ -209,7 +320,7 @@ model.findOne = (params) => {
                 errorlog(err);
                 return reject(err);
             });
-    });
+    });*/
 };
 
 /**
@@ -242,7 +353,7 @@ model.findPkBySlug = (fk_site, pk_content, slug_content) => {
 };
 
 /**
- * удаление контента по ид
+ * полное физическое удаление контента по ид
  *
  * @param {Array} delArr - массив ид контента
  */
@@ -251,9 +362,7 @@ model.delete = (delArr) => {
         mysql
             .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_content` IN(" + delArr.join(',') + ")", {})
             .then(rows => {
-                resolve({
-                    deleted: rows.affectedRows
-                });
+                resolve(rows.affectedRows);
             })
             .catch(err => {
                 reject(err);
@@ -414,7 +523,8 @@ model.update = (cobj, fk_site) => {
                         mysql
                             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content, `slug_content` = :slug, " +
                                 "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
-                                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content " +
+                                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
+                                "`fk_material_type` = :fk_material_type " +
                                 add_sql +
                                 "WHERE `pk_content` = :pk_content"
                                 , {
@@ -427,7 +537,8 @@ model.update = (cobj, fk_site) => {
                                     fk_user_updated: cobj.fk_user_created,
                                     update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
                                     pk_content: cobj.pk_content,
-                                    publish_date
+                                    publish_date,
+                                    fk_material_type: cobj.type_material
                                 })
                             .then(row => {
                                 resolve({
@@ -499,6 +610,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {int}    fk_user_created     - ид создателя
  *      @param {String} headimgsrc_content  - основное изображение
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
+ *      @param {int} type_material          - тип материала
  * @param {int} fk_site                     - ид сайта
  */
 model.save = (cobj, fk_site) => {
@@ -507,7 +619,7 @@ model.save = (cobj, fk_site) => {
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
-    cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
+    cobj.headimgsrc_content = (cobj.headimgsrc_content && cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
     if (cobj.intro_content.length === 0) {
         cobj.intro_content = null;
@@ -525,8 +637,11 @@ model.save = (cobj, fk_site) => {
             .checkUniqSlug(slug, fk_site)
             .then(slug => {
                 mysql
-                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`, `fk_site`, `status_content`, `fk_user_created`, `publish_date`)" +
-                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content, :fk_site, :status_content, :fk_user_created, :publish_date);", {
+                    .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
+                        "(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
+                        " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`)" +
+                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
+                        " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type);", {
                         title_content: cobj.title_content,
                         slug,
                         text_content: cobj.text_content,
@@ -535,15 +650,16 @@ model.save = (cobj, fk_site) => {
                         fk_site,
                         status_content: cobj.status_content,
                         fk_user_created: cobj.fk_user_created,
-                        publish_date
+                        publish_date,
+                        fk_material_type: cobj.type_material
                     })
                     .then(row => {
                         resolve({
                             pk_content: row.insertId
                         });
 
-                        //сохранение тегов позже
-                        if(cobj.tags) {
+                        // сохранение тегов позже
+                        if (cobj.tags && cobj.tags.length >= 1) {
                             model.saveTags(fk_site, cobj.tags, row.insertId);
                         }
                     })
@@ -599,11 +715,12 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * sets an increment view for content
  * allows to do any logic
  *
- * set once a day?
+ * to set once a day?
  *
  * @param {int} fk_site         - ид сайта
  * @param {int} pk_content      - ид контента или
  * @param {String} slug_content - slug content
+ * @param {Object} req          - express request object
  */
 model.incrViews = async (fk_site, pk_content, slug_content, req) => {
     const ip = requestIp.getClientIp(req);

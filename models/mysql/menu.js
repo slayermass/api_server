@@ -16,7 +16,7 @@ const
 mysql.formatBind();
 
 /**
- * get a table name of model
+ * get a table name of a model
  * @returns {string}
  */
 model.getTableName = () => {

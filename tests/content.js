@@ -5,7 +5,10 @@ process.env.NODE_ENV = 'test';
 let chai = require('chai');
 let chaiHttp = require('chai-http');
 let server = require('../app');
+
+// -----------
 const auth_id = require("../config/index").auth_id;
+let pk_content;
 
 chai.should();
 
@@ -13,7 +16,44 @@ chai.use(chaiHttp);
 
 describe('Контент', () => {
 
-    describe('/GET /papi/contentone', () => {
+    describe('/GET /api/content', () => {
+        it('(private) Создание контента', (done) => {
+            chai.request(server)
+                .post('/api/content')
+                .set('auth_id', auth_id)
+                .send({
+                    "fk_site": 1,
+                    "content": {
+                        "title": "Тестовый",
+                        "text": "<p>содерж</p>",
+                        "fk_user_created": 1,
+                        "type_material": 3,
+                        "intro": "краткое содерж",
+                        "tags": [{
+                            "id": 29 // тега может и не быть
+                        }]
+                    }
+                })
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+
+                    res.body.should.have.property('success');
+                    res.body.success.should.be.true;
+
+                    res.body.should.have.property('pk_content');
+                    res.body.pk_content.should.be.a('number');
+
+                    pk_content = res.body.pk_content;
+
+                    done();
+                });
+        });
+    });
+
+
+    // нет slug
+    /**describe('/GET /papi/contentone', () => {
         it('(public) Получение контента и формат, одиночный, slug_content', (done) => {
             chai.request(server)
                 .get('/papi/contentone')
@@ -26,7 +66,7 @@ describe('Контент', () => {
                     papi_contentone(res, done);
                 });
         });
-    });
+    });*/
 
     describe('/GET /papi/contentone', () => {
         it('(public) Получение контента и формат, одиночный, pk_content', (done) => {
@@ -35,7 +75,7 @@ describe('Контент', () => {
                 .query({
                     "fk_site": 1,
                     "withimages": 1,
-                    "pk_content": 33
+                    "pk_content": pk_content
                 })
                 .end((err, res) => {
                     papi_contentone(res, done);
@@ -43,7 +83,8 @@ describe('Контент', () => {
         });
     });
 
-    describe('/GET /api/contentone', () => {
+    // нет slug
+    /**describe('/GET /api/contentone', () => {
         it('(private) Получение контента и формат, одиночный, slug_content', (done) => {
             chai.request(server)
                 .get('/api/contentone')
@@ -56,7 +97,7 @@ describe('Контент', () => {
                     papi_contentone(res, done);
                 });
         });
-    });
+    });*/
 
     describe('/GET /api/contentone', () => {
         it('(private) Получение контента и формат, одиночный, pk_content', (done) => {
@@ -65,7 +106,7 @@ describe('Контент', () => {
                 .set('auth_id', auth_id)
                 .query({
                     "fk_site": 1,
-                    "pk_content": 33
+                    "pk_content": pk_content
                 })
                 .end((err, res) => {
                     papi_contentone(res, done);
@@ -115,6 +156,29 @@ describe('Контент', () => {
         });
     });
 
+    describe('/GET /api/content', () => {
+        it('(private) Удаление контента', (done) => {
+            chai.request(server)
+                .delete('/api/content')
+                .set('auth_id', auth_id)
+                .send({
+                    "delArr": pk_content
+                })
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+
+                    res.body.should.have.property('success');
+                    res.body.success.should.be.true;
+
+                    res.body.should.have.property('count');
+                    res.body.count.should.be.a('number');
+
+                    done();
+                });
+        });
+    });
+
 });
 
 function papi_contentone(res, done) {
@@ -125,8 +189,9 @@ function papi_contentone(res, done) {
     res.body.data.should.have.property('title_content');
     res.body.data.title_content.should.be.a('string');
 
-    res.body.data.should.have.property('headimgsrc_content');
-    res.body.data.headimgsrc_content.should.be.a('string');
+    // главной картинки может и не быть
+    /**res.body.data.should.have.property('headimgsrc_content');
+     res.body.data.headimgsrc_content.should.be.a('string');*/
 
     res.body.data.should.have.property('text_content');
     res.body.data.text_content.should.be.a('string');

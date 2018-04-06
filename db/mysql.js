@@ -20,7 +20,9 @@ exports.getSqlQuery = (sql, data = {}) => {
                 reject(err);
             } else {
                 if(rows.length === 0){//пустой ответ
-                    reject(EMPTY_SQL);
+                    //errorlog(`${EMPTY_SQL} - ${sql}`);
+                    //reject(EMPTY_SQL); / большой риск
+                    resolve({});
                 } else {
                     resolve(rows);
                 }
