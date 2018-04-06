@@ -14,4 +14,6 @@ router.use(require('./menu_items'));
 
 router.use(require('./text_blocks'));
 
+router.use(require('./material_types'));
+
 module.exports = router;

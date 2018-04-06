@@ -1,12 +1,11 @@
 const router = require('express').Router(),
-    sitesModel = require('../../models/mysql/sites');
+    model = require('../../models/mysql/content_material_type');
 
 /**
- * получение всех ресурсов
+ * получение всех типов материала
  */
-router.get('/sites', (req, res, next) => {
-
-    sitesModel
+router.get('/material_types', (req, res, next) => {
+    model
         .getAll()
         .then(data => {
             res.send(data);
