@@ -50,7 +50,7 @@ model.findOne = async (params) => {
         let [content_data, content_tags] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
-                    " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`," +
+                    " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`, `publish_date`, " +
                     " `status_content`, `fk_user_created`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +

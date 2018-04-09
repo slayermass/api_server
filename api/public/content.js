@@ -10,7 +10,9 @@ let contentCache = {};
  *
  * @see model.find
  */
-router.get('/content', async ({query}, res, next) => {
+router.get('/content', async (req, res, next) => {
+    let {query} = req;
+
     // validate
     query.limit = parseInt(query.limit, 10) || 20;
     query.fk_site = parseInt(query.fk_site, 10);

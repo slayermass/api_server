@@ -8,7 +8,9 @@ const router = require('express').Router(),
  *
  * @see contentModel.findOne
  */
-router.get('/contentone', async ({query}, res, next) => {
+router.get('/contentone', async (req, res, next) => {
+    let {query} = req;
+
     // validate
     query.fk_site = parseInt(query.fk_site, 10);
     query.pk_content = parseInt(query.pk_content, 10) || 0;
@@ -35,8 +37,8 @@ router.get('/contentone', async ({query}, res, next) => {
  *
  * @see contentModel.delete
  */
-router.delete('/content', async ({body}, res, next) => {
-    let delArr = doArray(body.delArr);
+router.delete('/content', async (req, res, next) => {
+    let delArr = doArray(req.body.delArr);
 
     if (delArr.length) {
         try {
@@ -59,7 +61,9 @@ router.delete('/content', async ({body}, res, next) => {
  *
  * @see contentModel.find
  */
-router.get('/content', async ({query}, res, next) => {
+router.get('/content', async (req, res, next) => {
+    let {query} = req;
+
     // validate
     query.limit = parseInt(query.limit, 10) || 20;
     query.fk_site = parseInt(query.fk_site, 10);
@@ -87,7 +91,8 @@ router.get('/content', async ({query}, res, next) => {
  *
  * @see contentModel.save
  */
-router.post('/content', ({body}, res, next) => {
+router.post('/content', (req, res, next) => {
+    let {body} = req;
     let content = {};
 
     try {
