@@ -149,178 +149,6 @@ model.findOne = async (params) => {
             throw new Error(err);
         }
     }
-
-
-    // TODO remove
-    /**return new Promise((resolve, reject) => {
-        model
-            .findPkBySlug(params.fk_site, params.pk_content, params.slug_content)
-            .then(pk_content => {
-                return new Promise((resolve, reject) => {
-                    async.parallel({
-                        content_data: (callback) => { //основная инфа
-                            // не выбраны еще основные поля выборки
-                            mysql
-                                .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
-                                    " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`," +
-                                    " `status_content`, `fk_user_created`, count(ip) AS views" +
-                                    " FROM `" + TABLE_NAME + "`" +
-                                    " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
-                                    " WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
-                                    fk_site: params.fk_site,
-                                    pk_content
-                                })
-                                .then(rows => {
-                                    callback(null, rows[0]);
-                                })
-                                .catch(err => {
-                                    if (err === EMPTY_SQL) {
-                                        callback(null, {});
-                                    } else {
-                                        callback(err);
-                                    }
-                                });
-                        },
-                        content_tags: (callback) => { //теги
-                            mysql
-                                .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
-                                    pk_content
-                                })
-                                .then(rows => {
-                                    callback(null, rows);
-                                })
-                                .catch(err => {
-                                    if (err === EMPTY_SQL) {
-                                        callback(null, {});
-                                    } else {
-                                        callback(err);
-                                    }
-                                });
-                        }
-                    }, (err, results) => {
-                        if (err) {
-                            errorlog(err);
-                            return reject(err);
-                        }
-
-                        //если есть данные - собрать в однотипное представление данных
-                        if (!empty(results.content_data)) {
-                            results.content_data.tags = [];
-
-                            for (let i = 0; i < results.content_tags.length; i++) {
-                                results.content_data.tags.push({
-                                    id: results.content_tags[i].pk_tag,
-                                    label: results.content_tags[i].name_tag
-                                });
-                            }
-                        }
-
-                        resolve(results.content_data);
-                    });
-                });
-            })
-            .then(data => { // найти изображения галерей
-                return new Promise((resolve) => {
-                    if (params.withimages > 0) {
-                        const ids = getIdsFromShortcodes(data.text_content);
-
-                        // дождаться инфы о файлах и отправить ответ
-                        uploadFilesModel
-                            .findApi(params.fk_site, 0, ids)
-                            .then(images => {
-                                let ret_images = {};
-
-                                for (let i = 0; i < images.length; i++) {
-                                    // pk_file можно удалить
-                                    ret_images[images[i].pk_file] = images[i];
-                                }
-
-                                resolve({
-                                    data,
-                                    images: ret_images
-                                });
-                            })
-                            .catch(() => { // ошибка - слать ответ
-                                resolve({
-                                    data,
-                                    images: {}
-                                });
-                            });
-                    } else {
-                        resolve({data});
-                    }
-                });
-            })
-            .then(data => { // найти связанные новости
-                if (params.wlc === true) {
-                    resolve(data.data);
-                } else {
-                    let html = decodeHtml(data.data.text_content);
-                    let widget_lc_ids = [];
-
-                    // есть связанные новости
-                    if (html.includes('[widgetLinkedContent')) {
-                        html.replace(/\[widgetLinkedContent([^\]]*)\]/g, (u, data_widget_lc) => {
-                            widget_lc_ids.push(parseInt(data_widget_lc.match(/\d+/)[0], 10));
-                        });
-
-                        let farr = [];
-
-                        for (let i = 0; i < widget_lc_ids.length; i++) {
-                            farr.push(
-                                function (callback) {
-                                    model
-                                        .findOne({
-                                            fk_site: params.fk_site,
-                                            pk_content: widget_lc_ids[i],
-                                            slug_content: params.slug_content,
-                                            withimages: 0,
-                                            wlc: true // быстрое решение рекурсии
-                                        })
-                                        .then(data => {
-                                            callback(null, {data});
-                                        })
-                                        .catch(err => {
-                                            callback(err)
-                                        });
-                                }
-                            );
-                        }
-
-                        // получить все синхронно
-                        async.parallel(farr, (err, results) => {
-                            if (err) {
-                                resolve({
-                                    data: data.data,
-                                    images: data.images,
-                                });
-                            }
-
-                            let result_lc = {};
-
-                            for (let i = 0; i < results.length; i++) {
-                                result_lc[results[i].data.pk_content] = results[i].data;
-                            }
-
-                            resolve({
-                                data: data.data,
-                                images: data.images,
-                                linked_content: result_lc
-                            });
-                        });
-                    } else {
-                        resolve({
-                            data: data.data,
-                            images: data.images,
-                        });
-                    }
-                }
-            })
-            .catch(err => {
-                errorlog(err);
-                return reject(err);
-            });
-    });*/
 };
 
 /**
@@ -484,6 +312,7 @@ model.find = (params) => {
  *      @param {int}    status_content      - статус
  *      @param {int}    fk_user_created     - ид создателя
  *      @param {String} headimgsrc_content  - основное изображение
+ *      @param {String} headimglabel_content  - подпись к основному изображению
  *      @param {int}    pk_content          - ид контента (новый или пересохранять)
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
  * @param {int} fk_site                     - ид сайта
@@ -494,6 +323,7 @@ model.update = (cobj, fk_site) => {
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
+    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
     cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
     if (cobj.intro_content.length === 0) {
@@ -524,7 +354,7 @@ model.update = (cobj, fk_site) => {
                             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content, `slug_content` = :slug, " +
                                 "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
                                 "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
-                                "`fk_material_type` = :fk_material_type " +
+                                "`fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content " +
                                 add_sql +
                                 "WHERE `pk_content` = :pk_content"
                                 , {
@@ -538,7 +368,8 @@ model.update = (cobj, fk_site) => {
                                     update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
                                     pk_content: cobj.pk_content,
                                     publish_date,
-                                    fk_material_type: cobj.type_material
+                                    fk_material_type: cobj.type_material,
+                                    headimglabel_content: cobj.headimglabel_content
                                 })
                             .then(row => {
                                 resolve({
@@ -609,6 +440,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {int}    status_content      - статус
  *      @param {int}    fk_user_created     - ид создателя
  *      @param {String} headimgsrc_content  - основное изображение
+ *      @param {String} headimglabel_content  - подпись к основному изображению
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
  *      @param {int} type_material          - тип материала
  * @param {int} fk_site                     - ид сайта
@@ -619,6 +451,7 @@ model.save = (cobj, fk_site) => {
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
+    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
     cobj.headimgsrc_content = (cobj.headimgsrc_content && cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
     if (cobj.intro_content.length === 0) {
@@ -639,9 +472,9 @@ model.save = (cobj, fk_site) => {
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
-                        " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`)" +
+                        " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`, `headimglabel_content`)" +
                         " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
-                        " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type);", {
+                        " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type, :headimglabel_content);", {
                         title_content: cobj.title_content,
                         slug,
                         text_content: cobj.text_content,
@@ -651,7 +484,8 @@ model.save = (cobj, fk_site) => {
                         status_content: cobj.status_content,
                         fk_user_created: cobj.fk_user_created,
                         publish_date,
-                        fk_material_type: cobj.type_material
+                        fk_material_type: cobj.type_material,
+                        headimglabel_content: cobj.headimglabel_content
                     })
                     .then(row => {
                         resolve({

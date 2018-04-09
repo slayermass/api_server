@@ -16,6 +16,8 @@ chai.use(chaiHttp);
 
 describe('Контент', () => {
 
+    // TODO
+    // headimglabel_content - добавить
     describe('/GET /api/content', () => {
         it('(private) Создание контента', (done) => {
             chai.request(server)

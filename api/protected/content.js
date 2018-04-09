@@ -108,7 +108,8 @@ router.post('/content', (req, res, next) => {
             headimgsrc_content: body.content.head_img_src,
             pk_content: parseInt(body.content.pk_content, 10),
             later_publish_time: body.content.later_publish_time,
-            type_material: parseInt(body.content.type_material, 10)
+            type_material: parseInt(body.content.type_material, 10),
+            headimglabel_content: body.content.headimglabel_content
         };
     } catch (e) {
         next(BadRequestError());
