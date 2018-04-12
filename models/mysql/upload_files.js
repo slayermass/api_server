@@ -17,6 +17,37 @@ const
 mysql.formatBind();
 
 /**
+ * обновление изображений при обрезке
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {Array} filesData
+ * @param {int} file_id - ид файла для замены(обновления в бд). если есть - значит один файл всего
+ */
+upload_files.onReplaceFiles = (fk_site, filesData, file_id) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "`" +
+                " SET `name_file`=:name_file, `path`=:path" +
+                " WHERE `pk_file`=:file_id;"
+                , {
+                    fk_site,
+                    name_file: filesData[0].name_file,
+                    path: filesData[0].path,
+                    file_id
+                })
+            .then(() => {
+                resolve({
+                    name_file: filesData[0].name_file,
+                    path: filesData[0].path
+                });
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
  * внесение данных при загрузке файла
  *
  * @param {int} fk_site - ид ресурса
@@ -25,7 +56,6 @@ mysql.formatBind();
              name_file(имя файла на диске)
              path(путь к файлу)
  folder(папка, отличная от обычной загрузки)
- *
  * @returns {Promise}
  */
 upload_files.onNewFiles = (fk_site, arr_files) => {
@@ -36,7 +66,7 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
             function(callback) {
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `name_file`, `path`, `folder`)" +
-                        " VALUES (:fk_site, :original_name_file, :name_file, :path, :folder)", {
+                        " VALUES (:fk_site, :original_name_file, :name_file, :path, :folder);", {
                         fk_site,
                         original_name_file: entities.encode(arr_files[i].original_name_file),
                         name_file: arr_files[i].name_file,
@@ -54,7 +84,7 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
                     })
                     .catch(err => {
                         callback(err)
-                    })
+                    });
             },
         );
     }

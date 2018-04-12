@@ -4,25 +4,25 @@ const
     path = require('path'),
     fs = require('fs'),
     multer  = require('multer'),
-    readChunk = require('read-chunk'),
-    fileType = require('file-type'),
+    // readChunk = require('read-chunk'),
+    // fileType = require('file-type'),
     pathExists = require('path-exists'),
     errorlog = require('../../functions').error,
-    mime = require('mime-types'),
+    // mime = require('mime-types'),
     del = require('del'),
     upload_files = require('../../models/mysql/upload_files'),
     BadRequestError = require('../../functions').BadRequestError,
     InternalServerError = require('../../functions').InternalServerError,
 
-    //разрешенные расширения
-    allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp', 'rar'],
+    //разрешенные расширения по mimetype
+    allowExts = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'],
+    //allowExts = ['jpg', 'jpeg', 'gif', 'png', 'zip', 'mp', 'rar'],
+
     //папка для сохранения
     path_to_save_global = require('../../config').path_to_save_global,
 
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
-            //console.log(req);
-
             //проверка существования пути
             pathExists(getSavePath().upload_path)
                 .then(exists => {
@@ -58,14 +58,13 @@ const
     upload = multer({
         storage: storage,
         fileFilter: function(req, file, cb) {
-            let ext = path.extname(file.originalname);
-
-            //проверка по расширению файла
-            if(allowExts.indexOf(ext.toLowerCase().replace(/[^a-zA-Z]+/g, "")) === -1) {
-                return cb(null, false);//просто пропускать
+            // проверка по mimetype файла
+            if (allowExts.includes(file.mimetype)) {
+                return cb(null, true);
+            } else {
+                errorlog(`Некорректный тип загружаемого файла. Mimetype: '${file.mimetype}', filename: '${file.originalname}'`);
+                return cb(null, false); // просто пропускать
             }
-
-            cb(null, true);
         }
     });
 
@@ -136,41 +135,41 @@ router.post('/upload', upload.any(), (req, res, next) => {
     }
 }, (req, res, next) => {
     let filesData = [],
+        file_id = parseInt(req.body.file_id, 10) || false, // не массив
         fk_site = parseInt(req.body.fk_site, 10);
 
     if (isNaN(fk_site) || fk_site < 1) {
         next(BadRequestError());
     } else {
         for (let i = 0; i < req.files.length; i++) {
-            /** let fpath = req.files[i].path;
-
-             //точная проверка еще раз
-             const buffer = readChunk.sync(fpath, 0, 4100);
-
-             if (buffer === null || allowExts.indexOf(fileType(buffer).ext) === -1) {
-                fs.unlink(fpath, function (err) {
-                    if (err) throw err;
-                    console.log(fpath + " deleted");
-                });
-            } else {*/
             filesData.push({
                 original_name_file: req.files[i].originalname,
                 name_file: req.files[i].filename,
                 path: req.files[i].destination,
                 folder: req.files[i].folder
             });
-            // }
         }
 
-        //сохранение в бд
-        upload_files
-            .onNewFiles(fk_site, filesData)
-            .then(files_data => {
-                res.json({success: true, files: files_data});
-            })
-            .catch(() => {
-                res.json({success: false, errors: 'имеются'});
-            });
+        if (file_id) { // обновить по ид
+            upload_files
+                .onReplaceFiles(fk_site, filesData, file_id)
+                .then(files_data => {
+                    res.json({success: true, files: files_data});
+                })
+                .catch(() => {
+                    res.json({success: false, errors: 'имеются'});
+                });
+        } else {
+            //сохранение в бд
+            upload_files
+                .onNewFiles(fk_site, filesData)
+                .then(files_data => {
+                    res.json({success: true, files: files_data});
+                })
+                .catch(() => {
+                    res.json({success: false, errors: 'имеются'});
+                });
+        }
     }
 });
 
