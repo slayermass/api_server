@@ -18,33 +18,39 @@ mysql.formatBind();
 
 /**
  * обновление изображений при обрезке
+ * после сохранения перезапись под старым именем
  *
  * @param {int} fk_site - ид ресурса
  * @param {Array} filesData
  * @param {int} file_id - ид файла для замены(обновления в бд). если есть - значит один файл всего
  */
-upload_files.onReplaceFiles = (fk_site, filesData, file_id) => {
-    return new Promise((resolve, reject) => {
-        mysql
-            .getSqlQuery("UPDATE `" + TABLE_NAME + "`" +
-                " SET `name_file`=:name_file, `path`=:path" +
-                " WHERE `pk_file`=:file_id;"
+upload_files.onReplaceFiles = async (fk_site, filesData, file_id) => {
+    let data;
+
+    try {
+        data = await mysql
+            .getSqlQuery("SELECT `name_file`, `path` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_file`=:file_id;"
                 , {
                     fk_site,
-                    name_file: filesData[0].name_file,
-                    path: filesData[0].path,
                     file_id
-                })
-            .then(() => {
-                resolve({
-                    name_file: filesData[0].name_file,
-                    path: filesData[0].path
-                });
-            })
-            .catch(() => {
-                reject();
             });
-    });
+    } catch (err) {
+        throw new Error(err);
+    }
+
+    try {
+        // переименовать файл
+        fs.renameSync(`${filesData[0].path}/${filesData[0].name_file}`, `${data[0].path}/${data[0].name_file}`);
+
+        return {
+            name_file: data[0].name_file,
+            path: data[0].path
+        };
+    } catch (err) {
+        errorlog(err);
+        fs.unlink(`${filesData[0].path}/${filesData[0].name_file}`);
+        throw new Error(err);
+    }
 };
 
 /**
