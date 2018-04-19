@@ -111,8 +111,10 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
  * добавление файла в библиотеку по ссылке
  * физическое сохранение по ссылке
  *
- * @param {int} fk_site        - ид ресурса
- * @param {String} url        - ссылка на файл
+ * проверку на уникальность(повторная загрузка одного и того же) надо бы
+ *
+ * @param {int} fk_site                 - ид ресурса
+ * @param {String} url                  - ссылка на файл
  * @param {String} original_name_file   - название(опционально)
  */
 upload_files.newByLink = async (fk_site, url, original_name_file) => {
@@ -122,65 +124,53 @@ upload_files.newByLink = async (fk_site, url, original_name_file) => {
         original_name_file = 'noname';
     }
 
-    try {
-        let {full_path, upload_path, upload_destiny} = await getSavePathAsync();
+    // определение путей и физическое сохранение
+    let {full_path, upload_path, upload_destiny} = await getSavePathAsync();
 
-        uploadPath = `${upload_path}/${upload_destiny}`;
+    if (full_path && upload_path && upload_destiny) {
+        try {
+            uploadPath = `${upload_path}/${upload_destiny}`;
 
-        // расширение файла
-        let ext = path.extname(url);
+            // расширение файла
+            let ext = path.extname(url);
 
-        nameFile = `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`;
+            nameFile = `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`;
 
-        // полное уникальное имя
-        let fileFullName = `${full_path}/${nameFile}`;
+            // полное уникальное имя
+            let fileFullName = `${full_path}/${nameFile}`;
 
-        let {filename} = await download.image({
-            url: url,
-            dest: fileFullName
-        });
-
-        console.log(filename)
-    } catch (err) {
-        errorlog(err);
-    }
-
-    try {
-        let row = await mysql
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `name_file`, `original_name_file`, `path`, `link`) " +
-                "VALUES (:fk_site, :name_file, :original_name_file, :path, :link)", {
-                fk_site,
-                name_file: nameFile,
-                path: uploadPath,
-                original_name_file: entities.encode(original_name_file),
-                link: entities.encode(url),
-                upload_date: new Date().toISOString()
+            await download.image({
+                url: url,
+                dest: fileFullName
             });
-
-        return row[0];
-    } catch (err) {
-        errorlog(err);
+        } catch (err) {
+            errorlog(err);
+        }
     }
 
-    return '';
+    // если все выше успешно
+    if (nameFile && uploadPath) {
+        try {
+            // сохранение в бд как полноценный файл
+            await mysql
+                .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `name_file`, `original_name_file`, `path`, `link`) " +
+                    "VALUES (:fk_site, :name_file, :original_name_file, :path, :link)", {
+                    fk_site,
+                    name_file: nameFile,
+                    path: uploadPath,
+                    original_name_file: entities.encode(original_name_file),
+                    link: entities.encode(url),
+                    upload_date: new Date().toISOString()
+                });
+        } catch (err) {
+            errorlog(err);
+            return false;
+        }
 
-    /**return new Promise((resolve, reject) => {
-        mysql
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `path`, `link`) " +
-                "VALUES (:fk_site, :original_name_file, :path, :link)", {
-                fk_site,
-                path: null,
-                original_name_file: entities.encode(original_name_file),
-                link: entities.encode(path),
-                upload_date: new Date().toISOString()
-            })
-            .then(row => {
-                resolve(row[0]);
-            })
-            .catch(err => {
-                reject();
-            })
-    });*/
+        return true;
+    }
+
+    return false;
 };
 
 /**

@@ -114,26 +114,11 @@ module.exports.getIdsFromShortcodes = (html) => {
 
 /**
  * определение пути для сохранения файлов
+ * проверка и создание папок
  *
- * @returns {{upload_path: string, upload_destiny: string, full_path: string}}
+ * @returns async {{upload_path: string, upload_destiny: string, full_path: string}}
  */
-module.exports.getSavePath = function () {
-    let date = new Date(),
-        day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
-        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
-        upload_path = `${path_to_save_global}${date.getFullYear()}`,
-        upload_destiny = `${day}_${month}`,
-        full_path = upload_path + '/' + upload_destiny;
-
-    return {
-        upload_path,
-        upload_destiny,
-        full_path
-    };
-};
-
-
-module.exports.getSavePathAsync = async function () {
+module.exports.getSavePathAsync = async () => {
     let date = new Date(),
         day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
         month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
@@ -154,7 +139,9 @@ module.exports.getSavePathAsync = async function () {
             fs.mkdirSync(full_path);
         }
     } catch (err) {
-        error(err);
+        module.exports.error(err);
+
+        return {}
     }
 
     return {

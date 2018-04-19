@@ -4,7 +4,6 @@ const
     path = require('path'),
     fs = require('fs'),
     multer  = require('multer'),
-    // readChunk = require('read-chunk'),
     // fileType = require('file-type'),
     pathExists = require('path-exists'),
     errorlog = require('../../functions').error,
@@ -13,7 +12,7 @@ const
     upload_files = require('../../models/mysql/upload_files'),
     BadRequestError = require('../../functions').BadRequestError,
     InternalServerError = require('../../functions').InternalServerError,
-    getSavePath = require('../../functions').getSavePath,
+    getSavePathAsync = require('../../functions').getSavePathAsync,
 
     //разрешенные расширения по mimetype
     allowExts = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'],
@@ -23,31 +22,15 @@ const
     path_to_save_global = require('../../config').path_to_save_global,
 
     storage = multer.diskStorage({
-        destination: function (req, file, cb) {
+        destination: async function (req, file, cb) {
             //проверка существования пути
-            pathExists(getSavePath().upload_path)
-                .then(exists => {
-                    if(exists === false) {
-                        console.log(getSavePath().upload_path);
-                        fs.mkdirSync(getSavePath().upload_path);
-                    }
-                })
-                .then(() => {
-                    pathExists(getSavePath().full_path)
-                        .then(exists => {
-                            if(exists === false) {
-                                fs.mkdirSync(getSavePath().full_path);
-                            }
-                        })
-                        .then(() => {
-                            //полный путь
-                            cb(null, getSavePath().full_path);
-                        });
-                })
-                .catch(err => {
-                    errorlog(err);
-                    cb(null);
-                });
+            let {full_path} = await getSavePathAsync();
+
+            if (full_path) {
+                cb(null, full_path);
+            } else {
+                cb(null);
+            }
         },
         filename: function (req, file, cb) {
             let ext = path.extname(file.originalname);
@@ -84,8 +67,8 @@ router.post('/upload_link', (req, res, next) => {
     } else {
         upload_files
             .newByLink(fk_site, link, name)
-            .then(files_data => {
-                res.json({success: true, files: files_data});
+            .then((success) => {
+                res.json({success: success});
             })
             .catch(err => {
                 errorlog(err);
