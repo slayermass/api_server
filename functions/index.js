@@ -4,6 +4,10 @@ const fs = require('fs'),
     Entities = require('html-entities').AllHtmlEntities,
     entities = new Entities(),
     pathExists = require('path-exists'),
+    imageType = require('image-type'),
+    http = require('http'),
+    https = require('https'),
+
     //папка для сохранения
     path_to_save_global = require('../config').path_to_save_global;
 
@@ -149,4 +153,39 @@ module.exports.getSavePathAsync = async () => {
         upload_destiny,
         full_path
     };
+};
+
+/**
+ * определение расширения и mime по url
+ * может здесь и надо было сохранять файл
+ *
+ * @param {String} url - url
+ * @returns {Promise} { ext: 'jpg', mime: 'image/jpeg' }
+ */
+module.exports.getImageTypeFromUrl = (url) => {
+    let protocol;
+
+    return new Promise((resolve, reject) => {
+        // определить протокол
+        if (/^https:/.test(url)) {
+            protocol = https;
+        } else if (/^http:/.test(url)) {
+            protocol = http;
+        } else { // других не надо (пока?)
+            reject(new URIError(url));
+        }
+
+        protocol.get(url, res => {
+            if (res.statusCode >= 300) {
+                reject(new URIError(url));
+            }
+
+            res.on('data', chunk => {
+                res.destroy();
+                resolve(imageType(chunk));
+            });
+        }).on('error', (e) => {
+            reject(e);
+        });
+    });
 };

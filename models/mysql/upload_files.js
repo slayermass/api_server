@@ -11,10 +11,10 @@ const
     mime = require('mime-types'),
     async = require('async'),
     fs = require('fs'),
-    path = require('path'),
     empty = require('is-empty'),
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
     getSavePathAsync = require('../../functions').getSavePathAsync,
+    getImageTypeFromUrl = require('../../functions').getImageTypeFromUrl,
     download = require('image-downloader');
 
 mysql.formatBind();
@@ -118,11 +118,22 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
  * @param {String} original_name_file   - название(опционально)
  */
 upload_files.newByLink = async (fk_site, url, original_name_file) => {
-    let nameFile, uploadPath;
+    let nameFile, uploadPath, ext;
 
     if (original_name_file.length < 1) {
         original_name_file = 'noname';
     }
+
+    // расширение файла
+    try {
+        let type = await getImageTypeFromUrl(url);
+        ext = '.' + type.ext;
+    } catch (err) {
+        errorlog(err);
+
+        return false;
+    }
+    // end расширение файла
 
     // определение путей и физическое сохранение
     let {full_path, upload_path, upload_destiny} = await getSavePathAsync();
@@ -130,9 +141,6 @@ upload_files.newByLink = async (fk_site, url, original_name_file) => {
     if (full_path && upload_path && upload_destiny) {
         try {
             uploadPath = `${upload_path}/${upload_destiny}`;
-
-            // расширение файла
-            let ext = path.extname(url);
 
             nameFile = `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`;
 
@@ -144,7 +152,9 @@ upload_files.newByLink = async (fk_site, url, original_name_file) => {
                 dest: fileFullName
             });
         } catch (err) {
-            errorlog(err);
+            errorlog(err); // ошибки от загрузчика
+
+            return false;
         }
     }
 

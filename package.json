@@ -25,6 +25,7 @@
     "formidable": "^1.2.1",
     "html-entities": "^1.2.1",
     "image-downloader": "^3.3.0",
+    "image-type": "^3.0.0",
     "is-empty": "^1.2.0",
     "log": "^1.4.0",
     "mime-types": "^2.1.18",
