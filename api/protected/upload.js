@@ -13,6 +13,7 @@ const
     upload_files = require('../../models/mysql/upload_files'),
     BadRequestError = require('../../functions').BadRequestError,
     InternalServerError = require('../../functions').InternalServerError,
+    getSavePath = require('../../functions').getSavePath,
 
     //разрешенные расширения по mimetype
     allowExts = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'],
@@ -87,6 +88,7 @@ router.post('/upload_link', (req, res, next) => {
                 res.json({success: true, files: files_data});
             })
             .catch(err => {
+                errorlog(err);
                 res.json({success: false, errors: 'имеются'});
             });
     }
@@ -306,23 +308,3 @@ router.get('/upload/infoFile', (req, res, next) => {
 });
 
 module.exports = router;
-
-/**
- * определение пути для сохранения файлов
- *
- * @returns {{upload_path: string, upload_destiny: string, full_path: string}}
- */
-function getSavePath() {
-    let date = new Date(),
-        day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
-        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
-        upload_path = `${path_to_save_global}${date.getFullYear()}`,
-        upload_destiny = `${day}_${month}`,
-        full_path = upload_path + '/' + upload_destiny;
-
-    return {
-        upload_path,
-        upload_destiny,
-        full_path
-    };
-}

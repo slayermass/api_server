@@ -2,7 +2,10 @@ const fs = require('fs'),
     Log = require('log'),
     logger = new Log('debug', fs.createWriteStream('my.log')),
     Entities = require('html-entities').AllHtmlEntities,
-    entities = new Entities();
+    entities = new Entities(),
+    pathExists = require('path-exists'),
+    //папка для сохранения
+    path_to_save_global = require('../config').path_to_save_global;
 
 /**
  * логирование общее
@@ -107,4 +110,56 @@ module.exports.getIdsFromShortcodes = (html) => {
     }
 
     return return_ids;
-}
+};
+
+/**
+ * определение пути для сохранения файлов
+ *
+ * @returns {{upload_path: string, upload_destiny: string, full_path: string}}
+ */
+module.exports.getSavePath = function () {
+    let date = new Date(),
+        day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
+        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
+        upload_path = `${path_to_save_global}${date.getFullYear()}`,
+        upload_destiny = `${day}_${month}`,
+        full_path = upload_path + '/' + upload_destiny;
+
+    return {
+        upload_path,
+        upload_destiny,
+        full_path
+    };
+};
+
+
+module.exports.getSavePathAsync = async function () {
+    let date = new Date(),
+        day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
+        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
+        upload_path = `${path_to_save_global}${date.getFullYear()}`,
+        upload_destiny = `${day}_${month}`,
+        full_path = upload_path + '/' + upload_destiny;
+
+    try {
+        let exists_upload_path = await pathExists(upload_path);
+
+        if (exists_upload_path === false) {
+            fs.mkdirSync(upload_path);
+        }
+
+        let exists_full_path = await pathExists(full_path);
+
+        if (exists_full_path === false) {
+            fs.mkdirSync(full_path);
+        }
+    } catch (err) {
+        error(err);
+    }
+
+    return {
+        upload_path,
+        upload_destiny,
+        full_path
+    };
+};

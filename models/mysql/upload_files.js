@@ -11,8 +11,11 @@ const
     mime = require('mime-types'),
     async = require('async'),
     fs = require('fs'),
+    path = require('path'),
     empty = require('is-empty'),
-    EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL;
+    EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
+    getSavePathAsync = require('../../functions').getSavePathAsync,
+    download = require('image-downloader');
 
 mysql.formatBind();
 
@@ -106,17 +109,62 @@ upload_files.onNewFiles = (fk_site, arr_files) => {
 
 /**
  * добавление файла в библиотеку по ссылке
+ * физическое сохранение по ссылке
  *
  * @param {int} fk_site        - ид ресурса
- * @param {String} path        - ссылка на файл
+ * @param {String} url        - ссылка на файл
  * @param {String} original_name_file   - название(опционально)
  */
-upload_files.newByLink = (fk_site, path, original_name_file) => {
+upload_files.newByLink = async (fk_site, url, original_name_file) => {
+    let nameFile, uploadPath;
+
     if (original_name_file.length < 1) {
         original_name_file = 'noname';
     }
 
-    return new Promise((resolve, reject) => {
+    try {
+        let {full_path, upload_path, upload_destiny} = await getSavePathAsync();
+
+        uploadPath = `${upload_path}/${upload_destiny}`;
+
+        // расширение файла
+        let ext = path.extname(url);
+
+        nameFile = `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`;
+
+        // полное уникальное имя
+        let fileFullName = `${full_path}/${nameFile}`;
+
+        let {filename} = await download.image({
+            url: url,
+            dest: fileFullName
+        });
+
+        console.log(filename)
+    } catch (err) {
+        errorlog(err);
+    }
+
+    try {
+        let row = await mysql
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `name_file`, `original_name_file`, `path`, `link`) " +
+                "VALUES (:fk_site, :name_file, :original_name_file, :path, :link)", {
+                fk_site,
+                name_file: nameFile,
+                path: uploadPath,
+                original_name_file: entities.encode(original_name_file),
+                link: entities.encode(url),
+                upload_date: new Date().toISOString()
+            });
+
+        return row[0];
+    } catch (err) {
+        errorlog(err);
+    }
+
+    return '';
+
+    /**return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`fk_site`, `original_name_file`, `path`, `link`) " +
                 "VALUES (:fk_site, :original_name_file, :path, :link)", {
@@ -132,7 +180,7 @@ upload_files.newByLink = (fk_site, path, original_name_file) => {
             .catch(err => {
                 reject();
             })
-    });
+    });*/
 };
 
 /**
