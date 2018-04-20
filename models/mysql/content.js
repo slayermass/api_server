@@ -5,6 +5,7 @@ let model = function(){};
 const
     TABLE_NAME = 'content',
     TABLE_NAME_VIEWS = 'content_views',
+    TABLE_NAME_HISTORY = 'content_history',
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -37,16 +38,15 @@ mysql.formatBind();
  *      @param {bool} wlc            - (true)не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
  */
 model.findOne = async (params) => {
+    let data = {}; // основной объект ответа, дополняющийся данными
+    // найти основные данные
+    const pk_content = await model.findPkBySlug(params.fk_site, params.pk_content, params.slug_content);
+
     if (params.wlc === undefined) {
         params.wlc = false;
     }
 
     try {
-        let data = {}; // основной объект ответа, дополняющийся данными
-
-        // найти основные данные
-        const pk_content = await model.findPkBySlug(params.fk_site, params.pk_content, params.slug_content);
-
         let [content_data, content_tags] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
@@ -82,25 +82,6 @@ model.findOne = async (params) => {
         data.data = content_data;
         content_data = null;
         // end найти основные данные
-
-
-        // найти изображения галерей
-        if (params.withimages > 0) {
-            const ids = getIdsFromShortcodes(data.data.text_content);
-
-            let images = await uploadFilesModel.findApi(params.fk_site, 0, ids);
-
-            let ret_images = {};
-
-            for (let i = 0; i < images.length; i++) {
-                // pk_file можно удалить
-                ret_images[images[i].pk_file] = images[i];
-            }
-
-            data.images = ret_images;
-        }
-        // end найти изображения галерей
-
 
         // найти связанные новости
         if (params.wlc === false) {
@@ -140,8 +121,6 @@ model.findOne = async (params) => {
             }
         }
         // end найти связанные новости
-
-        return data;
     } catch (err) {
         if (err === EMPTY_SQL) {
             return {};
@@ -149,6 +128,41 @@ model.findOne = async (params) => {
             throw new Error(err);
         }
     }
+
+    // ДОПОЛНИТЕЛЬНЫЕ поля, при проблемах получения которых не должно падать выполнение
+
+    // найти изображения галерей
+    if (params.withimages > 0) {
+        try {
+            const ids = getIdsFromShortcodes(data.data.text_content);
+
+            let images = await uploadFilesModel.findApi(params.fk_site, 0, ids);
+
+            let ret_images = {};
+
+            for (let i = 0; i < images.length; i++) {
+                // pk_file можно удалить
+                ret_images[images[i].pk_file] = images[i];
+            }
+
+            data.images = ret_images;
+        } catch (err) {
+
+        }
+    }
+    // end найти изображения галерей
+
+    // найти историю изменений контента
+    if (params._withhistory) {
+        try {
+            data.history = await model.findHistory(pk_content);
+        } catch (err) {
+
+        }
+    }
+    // end найти историю изменений контента
+
+    return data;
 };
 
 /**
@@ -587,6 +601,62 @@ model.checkPublishUpdate = () => {
             })
             .then(data => {
                 resolve(data.affectedRows);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
+ * сохранение истории редактирования контента
+ * сохраняет полную копию в JSON
+ * можно посмотреть что именно сохранять, а что игнорировать. пока так
+ *
+ * дубликаты при сохранении?
+ *
+ * @param {Object} content - объект контента с фронтенда
+ * @returns {Promise<void>}
+ */
+model.saveHistory = (content) => {
+    let {pk_content} = content;
+    delete content.pk_content;
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("INSERT INTO `" + TABLE_NAME_HISTORY + "` (`fk_content`, `json_data`) VALUES (:fk_content, :json_data);", {
+                fk_content: pk_content,
+                json_data: JSON.stringify(content)
+            })
+            .then(() => {
+                resolve();
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
+ * получение истории (всей) по ид контента
+ *
+ * @param {int} fk_content  - ид контента
+ * @param {Boolean} onlyDate - только дату(true) или все данные (false)
+ */
+model.findHistory = (fk_content, onlyDate = true) => {
+    let select = '`fk_history_content`, `timestamp`';
+
+    if (!onlyDate) {
+        select += ', `json_data`';
+    }
+
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME_HISTORY + "` WHERE `fk_content` = :fk_content;", {
+                fk_content
+            })
+            .then(rows => {
+                resolve(rows);
             })
             .catch(() => {
                 reject();

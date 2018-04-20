@@ -15,6 +15,7 @@ router.get('/contentone', async (req, res, next) => {
     query.fk_site = parseInt(query.fk_site, 10);
     query.pk_content = parseInt(query.pk_content, 10) || 0;
     query.slug_content = query.slug_content || '';
+    query._withhistory = parseInt(query.withhistory, 10) || 0; // надо
 
     if (
         (isNaN(query.fk_site) || query.fk_site < 1) ||
@@ -133,6 +134,9 @@ router.post('/content', (req, res, next) => {
                     success: true,
                     pk_content: data.pk_content
                 });
+
+                contentModel
+                    .saveHistory(content);
             })
             .catch(err => {
                 next(err);
@@ -145,6 +149,9 @@ router.post('/content', (req, res, next) => {
                     success: true,
                     pk_content: data.pk_content
                 });
+
+                contentModel
+                    .saveHistory(content);
             })
             .catch(err => {
                 next(err);
