@@ -49,7 +49,7 @@ model.findOne = async (params) => {
     try {
         let [content_data, content_tags] = await Promise.all([
             await mysql
-                .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`," +
+                .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `seo_title_content`, " +
                     " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`, `publish_date`, " +
                     " `status_content`, `fk_user_created`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
@@ -335,6 +335,7 @@ model.update = (cobj, fk_site) => {
     let slug = slugify(cobj.title_content);
 
     cobj.title_content = entities.encode(cobj.title_content);
+    cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
     cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
@@ -353,6 +354,8 @@ model.update = (cobj, fk_site) => {
         add_sql = ', `publish_date` = :publish_date ';
     }
 
+    console.log(cobj);
+
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
@@ -365,7 +368,8 @@ model.update = (cobj, fk_site) => {
                     .then(slug => {
 
                         mysql
-                            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content, `slug_content` = :slug, " +
+                            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content," +
+                                " `slug_content` = :slug, `seo_title_content` = :seo_title_content, " +
                                 "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
                                 "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
                                 "`fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content " +
@@ -383,7 +387,8 @@ model.update = (cobj, fk_site) => {
                                     pk_content: cobj.pk_content,
                                     publish_date,
                                     fk_material_type: cobj.type_material,
-                                    headimglabel_content: cobj.headimglabel_content
+                                    headimglabel_content: cobj.headimglabel_content,
+                                    seo_title_content: cobj.seo_title_content
                                 })
                             .then(row => {
                                 resolve({
@@ -463,6 +468,7 @@ model.save = (cobj, fk_site) => {
     let slug = slugify(cobj.title_content);
 
     cobj.title_content = entities.encode(cobj.title_content);
+    cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
     cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
@@ -485,9 +491,9 @@ model.save = (cobj, fk_site) => {
             .then(slug => {
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
-                        "(`title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
+                        "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
                         " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`, `headimglabel_content`)" +
-                        " VALUES (:title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
+                        " VALUES (:title_content, :seo_title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
                         " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type, :headimglabel_content);", {
                         title_content: cobj.title_content,
                         slug,
@@ -499,7 +505,8 @@ model.save = (cobj, fk_site) => {
                         fk_user_created: cobj.fk_user_created,
                         publish_date,
                         fk_material_type: cobj.type_material,
-                        headimglabel_content: cobj.headimglabel_content
+                        headimglabel_content: cobj.headimglabel_content,
+                        seo_title_content: cobj.seo_title_content
                     })
                     .then(row => {
                         resolve({

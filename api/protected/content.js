@@ -101,6 +101,7 @@ router.post('/content', (req, res, next) => {
         body.fk_site = parseInt(body.fk_site, 10);
         content = {
             title_content: body.content.title,
+            seo_title_content: body.content.seo_title_content,
             text_content: body.content.text,
             intro_content: body.content.intro,
             tags: body.content.tags,
