@@ -127,7 +127,7 @@ module.exports.getSavePathAsync = async () => {
         day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
         month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
         upload_path = `${path_to_save_global}${date.getFullYear()}`,
-        upload_destiny = `${day}_${month}`,
+        upload_destiny = `${month}_${day}`,
         full_path = upload_path + '/' + upload_destiny;
 
     try {
