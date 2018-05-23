@@ -151,6 +151,9 @@ router.post('/content', (req, res, next) => {
                     pk_content: data.pk_content
                 });
 
+                // добавить pk после создания
+                content.pk_content = data.pk_content;
+
                 contentModel
                     .saveHistory(content);
             })

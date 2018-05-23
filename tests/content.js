@@ -70,6 +70,7 @@ describe('Контент', () => {
         });
     });*/
 
+    // здесь ошибка походу
     describe('/GET /papi/contentone', () => {
         it('(public) Получение контента и формат, одиночный, pk_content', (done) => {
             chai.request(server)

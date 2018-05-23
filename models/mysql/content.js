@@ -354,8 +354,6 @@ model.update = (cobj, fk_site) => {
         add_sql = ', `publish_date` = :publish_date ';
     }
 
-    console.log(cobj);
-
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {

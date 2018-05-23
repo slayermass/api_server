@@ -3,8 +3,6 @@ const router = require('express').Router(),
     model = require('../../models/mysql/content'),
     empty = require('is-empty');
 
-let contentCache = {};
-
 /**
  * getting content for public site (index page)
  *
@@ -56,23 +54,13 @@ router.get('/contentone', async (req, res, next) => {
     ) {
         next(BadRequestError());
     } else {
-        // простейший кэш для тестов
-        /*if (!empty(contentCache) &&
-            (contentCache.data.slug_content === query.slug_content || contentCache.data.pk_content === query.pk_content)
-        ) {
-            res.send(contentCache);
-        } else {*/
-            // end простейший кэш для тестов
             try {
                 let data = await model.findOne(query);
 
                 res.send(data);
-
-                //contentCache = Object.assign({}, data);
             } catch (err) {
                 next(err);
             }
-        // }
 
         // увеличить просмотр
         model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
