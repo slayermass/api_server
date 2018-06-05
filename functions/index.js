@@ -103,7 +103,7 @@ module.exports.getIdsFromShortcodes = (html) => {
 
     if (html.includes('[gallery')) {
         // обычно в теге <p> tinymce создает
-        html.replace(/<p>\[gallery([^\]]*)\]<\/p>/g, (all, ids) => {
+        html.replace(/\[gallery([^\]]*)\]/g, (all, ids) => {
             ids = ids.split('"');
             ids = ids[1].split(',');
 
