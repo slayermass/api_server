@@ -165,12 +165,27 @@ model.findOne = async (params) => {
 
     // найти автора контента(public)
     try {
-        data.author = await mysql
+        let user_data = await mysql
             .getSqlQuery("SELECT `lastname_content_author`, `name_content_author`, `secondname_content_author`" +
                 " FROM `content_authors` WHERE `pk_content_author` = :fk_user_created", {
                 fk_site: params.fk_site,
                 fk_user_created: data.data.fk_user_created
             });
+
+        if (user_data.length) {
+            data.author = {
+                lastname: user_data[0].lastname_content_author,
+                name: user_data[0].name_content_author,
+                secondname: user_data[0].secondname_content_author
+            };
+        } else { // некий пустой объект
+            data.author = {
+                lastname: 'Неизвестно',
+                name: '',
+                secondname: ''
+            };
+        }
+
     } catch (err) {
 
     }
