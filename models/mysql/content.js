@@ -39,6 +39,7 @@ mysql.formatBind();
  */
 model.findOne = async (params) => {
     let data = {}; // основной объект ответа, дополняющийся данными
+
     // найти основные данные
     const pk_content = await model.findPkBySlug(params.fk_site, params.pk_content, params.slug_content);
 
@@ -161,6 +162,19 @@ model.findOne = async (params) => {
         }
     }
     // end найти историю изменений контента
+
+    // найти автора контента(public)
+    try {
+        data.author = await mysql
+            .getSqlQuery("SELECT `lastname_content_author`, `name_content_author`, `secondname_content_author`" +
+                " FROM `content_authors` WHERE `pk_content_author` = :fk_user_created", {
+                fk_site: params.fk_site,
+                fk_user_created: data.data.fk_user_created
+            });
+    } catch (err) {
+
+    }
+    // end найти автора контента(public)
 
     return data;
 };
@@ -332,7 +346,10 @@ model.find = (params) => {
  * @param {int} fk_site                     - ид сайта
  */
 model.update = (cobj, fk_site) => {
-    let slug = slugify(cobj.title_content);
+    // зачем менять slug при обновлении? он же уже уникальный при создании
+    // ответ - если меняется заголовок. сейчас отключено и никак не обрабатывается
+    // меняет ссылку, особенно у старых новостей - 10000 => vlasti-barnaula-gotovy-potratit-na-ozelenenie-80-mln-rubley
+    // let slug = slugify(cobj.title_content);
 
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.seo_title_content = entities.encode(cobj.seo_title_content);
@@ -356,6 +373,44 @@ model.update = (cobj, fk_site) => {
 
     return new Promise((resolve, reject) => {
         mysql
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content," +
+                " `seo_title_content` = :seo_title_content, `headimgsrc_content` = :headimgsrc_content," +
+                " `text_content` = :text_content, `status_content` = :status_content, " +
+                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
+                "`fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content " +
+                add_sql +
+                "WHERE `pk_content` = :pk_content"
+                , {
+                    title_content: cobj.title_content,
+                    intro_content: cobj.intro_content,
+                    text_content: cobj.text_content,
+                    headimgsrc_content: cobj.headimgsrc_content,
+                    status_content: cobj.status_content,
+                    fk_user_updated: cobj.fk_user_created,
+                    update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
+                    pk_content: cobj.pk_content,
+                    publish_date,
+                    fk_material_type: cobj.type_material,
+                    headimglabel_content: cobj.headimglabel_content,
+                    seo_title_content: cobj.seo_title_content
+                })
+            .then(row => {
+                resolve({
+                    pk_content: row.insertId
+                });
+
+                //сохранение тегов позже
+                if (cobj.tags) {
+                    model.saveTags(fk_site, cobj.tags, cobj.pk_content);
+                }
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+
+    /**return new Promise((resolve, reject) => {
+        mysql
             .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
                 fk_site,
                 pk_content: cobj.pk_content
@@ -364,7 +419,6 @@ model.update = (cobj, fk_site) => {
                 model
                     .checkUniqSlug(slug, fk_site, [row[0].slug_content])
                     .then(slug => {
-
                         mysql
                             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content," +
                                 " `slug_content` = :slug, `seo_title_content` = :seo_title_content, " +
@@ -406,7 +460,7 @@ model.update = (cobj, fk_site) => {
             .catch(err => {
                 reject(err);
             });
-    });
+    });*/
 };
 
 /**

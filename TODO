@@ -1,0 +1,7 @@
+---contentone---
+remove: убрать status_content, fk_user_created
+
+---mysql/content 168---
+метод для получения авторов + модель
+data.author = await mysql
+
