@@ -4,7 +4,7 @@ const router = require('express').Router(),
     empty = require('is-empty');
 
 /**
- * getting content for public site (index page)
+ * getting a content for public site (index page)
  *
  * @see model.find
  */
@@ -33,7 +33,7 @@ router.get('/content', async (req, res, next) => {
 });
 
 /**
- * getting content for public site by slug or pk_content
+ * getting a content for public site by slug or pk_content
  *
  * + sets a view
  *
@@ -64,6 +64,32 @@ router.get('/contentone', async (req, res, next) => {
 
         // увеличить просмотр
         model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
+    }
+});
+
+/**
+ * check if has content, get limited by id last news
+ *
+ * @see contentModel.isGetContentNew
+ */
+router.get('/contentnew', async (req, res, next) => {
+    // validate
+    const fk_site = parseInt(req.query.fk_site, 10);
+    const pk_content = parseInt(req.query.pk_content, 10);
+    let limit = parseInt(req.query.limit, 10) || 20;
+
+    limit = (limit > 20) ? 20 : limit;
+
+    if (isNaN(fk_site) || isNaN(pk_content) || pk_content < 1 || fk_site < 1) {
+        next(BadRequestError());
+    } else {
+        try {
+            let data = await model.isGetContentNew(fk_site, pk_content, limit);
+
+            res.send(data);
+        } catch (err) {
+            next(err);
+        }
     }
 });
 

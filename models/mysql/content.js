@@ -52,7 +52,7 @@ model.findOne = async (params) => {
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `title_content`, `slug_content`, `seo_title_content`, " +
                     " `headimgsrc_content`, `intro_content`, `text_content`, `create_date`, `publish_date`, " +
-                    " `status_content`, `fk_user_created`, count(ip) AS views" +
+                    " `status_content`, `fk_user_created`, `is_chosen`, `headimglabel_content`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                     " WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
@@ -358,9 +358,10 @@ model.find = (params) => {
  *      @param {String} headimglabel_content  - подпись к основному изображению
  *      @param {int}    pk_content          - ид контента (новый или пересохранять)
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
+ *      @param {int}    is_chosen           - избранная ли новость
  * @param {int} fk_site                     - ид сайта
  */
-model.update = (cobj, fk_site) => {
+model.update = async (cobj, fk_site) => {
     // зачем менять slug при обновлении? он же уже уникальный при создании
     // ответ - если меняется заголовок. сейчас отключено и никак не обрабатывается
     // меняет ссылку, особенно у старых новостей - 10000 => vlasti-barnaula-gotovy-potratit-na-ozelenenie-80-mln-rubley
@@ -370,7 +371,7 @@ model.update = (cobj, fk_site) => {
     cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
-    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
+    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content) || null;
     cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
     if (cobj.intro_content.length === 0) {
@@ -384,6 +385,12 @@ model.update = (cobj, fk_site) => {
     if (cobj.status_content === 3) {
         publish_date = cobj.later_publish_time;
         add_sql = ', `publish_date` = :publish_date ';
+    }
+
+    if (cobj.is_chosen) {
+        add_sql += ', `is_chosen` = :is_chosen ';
+
+        await model.unsetChosen(fk_site);
     }
 
     return new Promise((resolve, reject) => {
@@ -407,7 +414,8 @@ model.update = (cobj, fk_site) => {
                     publish_date,
                     fk_material_type: cobj.type_material,
                     headimglabel_content: cobj.headimglabel_content,
-                    seo_title_content: cobj.seo_title_content
+                    seo_title_content: cobj.seo_title_content,
+                    is_chosen: cobj.is_chosen
                 })
             .then(row => {
                 resolve({
@@ -423,59 +431,6 @@ model.update = (cobj, fk_site) => {
                 reject(err);
             });
     });
-
-    /**return new Promise((resolve, reject) => {
-        mysql
-            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pk_content` = :pk_content", {
-                fk_site,
-                pk_content: cobj.pk_content
-            })
-            .then(row => {
-                model
-                    .checkUniqSlug(slug, fk_site, [row[0].slug_content])
-                    .then(slug => {
-                        mysql
-                            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content," +
-                                " `slug_content` = :slug, `seo_title_content` = :seo_title_content, " +
-                                "`headimgsrc_content` = :headimgsrc_content, `text_content` = :text_content, `status_content` = :status_content, " +
-                                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
-                                "`fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content " +
-                                add_sql +
-                                "WHERE `pk_content` = :pk_content"
-                                , {
-                                    title_content: cobj.title_content,
-                                    slug,
-                                    intro_content: cobj.intro_content,
-                                    text_content: cobj.text_content,
-                                    headimgsrc_content: cobj.headimgsrc_content,
-                                    status_content: cobj.status_content,
-                                    fk_user_updated: cobj.fk_user_created,
-                                    update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-                                    pk_content: cobj.pk_content,
-                                    publish_date,
-                                    fk_material_type: cobj.type_material,
-                                    headimglabel_content: cobj.headimglabel_content,
-                                    seo_title_content: cobj.seo_title_content
-                                })
-                            .then(row => {
-                                resolve({
-                                    pk_content: row.insertId
-                                });
-
-                                //сохранение тегов позже
-                                if (cobj.tags) {
-                                    model.saveTags(fk_site, cobj.tags, cobj.pk_content);
-                                }
-                            })
-                            .catch(err => {
-                                reject(err);
-                            });
-                    });
-            })
-            .catch(err => {
-                reject(err);
-            });
-    });*/
 };
 
 /**
@@ -528,17 +483,18 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {String} headimgsrc_content  - основное изображение
  *      @param {String} headimglabel_content  - подпись к основному изображению
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
- *      @param {int} type_material          - тип материала
+ *      @param {int}    type_material          - тип материала
+ *      @param {int}    is_chosen              - избранная ли новость
  * @param {int} fk_site                     - ид сайта
  */
-model.save = (cobj, fk_site) => {
+model.save = async (cobj, fk_site) => {
     let slug = slugify(cobj.title_content);
 
     cobj.title_content = entities.encode(cobj.title_content);
     cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
-    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content);
+    cobj.headimglabel_content = entities.encode(cobj.headimglabel_content) || null;
     cobj.headimgsrc_content = (cobj.headimgsrc_content && cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
     if (cobj.intro_content.length === 0) {
@@ -551,6 +507,10 @@ model.save = (cobj, fk_site) => {
         publish_date = cobj.later_publish_time;
     }
 
+    if (cobj.is_chosen) {
+        await model.unsetChosen(fk_site);
+    }
+
     return new Promise((resolve, reject) => {
         //сохранение контента
         model
@@ -559,9 +519,9 @@ model.save = (cobj, fk_site) => {
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
-                        " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`, `headimglabel_content`)" +
+                        " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`, `headimglabel_content`, `is_chosen`)" +
                         " VALUES (:title_content, :seo_title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
-                        " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type, :headimglabel_content);", {
+                        " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type, :headimglabel_content, :is_chosen);", {
                         title_content: cobj.title_content,
                         slug,
                         text_content: cobj.text_content,
@@ -573,7 +533,8 @@ model.save = (cobj, fk_site) => {
                         publish_date,
                         fk_material_type: cobj.type_material,
                         headimglabel_content: cobj.headimglabel_content,
-                        seo_title_content: cobj.seo_title_content
+                        seo_title_content: cobj.seo_title_content,
+                        is_chosen: cobj.is_chosen
                     })
                     .then(row => {
                         resolve({
@@ -728,6 +689,57 @@ model.findHistory = (fk_content, onlyDate = true) => {
         mysql
             .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME_HISTORY + "` WHERE `fk_content` = :fk_content;", {
                 fk_content
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
+ * private
+ *
+ * убрать все метки избранных с новостей, только 1 избранная может быть
+ *
+ * @param {int} fk_site    - ид сайта
+ */
+model.unsetChosen = (fk_site) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `is_chosen` = 0 WHERE `is_chosen` = 1 AND `pk_content` > 0" +
+                " AND `fk_site` = :fk_site;", {
+                fk_site
+            })
+            .then(() => {
+                resolve(true);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+};
+
+/**
+ * проверить есть ли новости после данной(pk_content) и отдать (limit) штук
+ *
+ * TODO сделать по slug_content - найти ид
+ *
+ * @param {int} fk_site    - ид сайта
+ * @param {int} pk_content - ид проверяемой новости
+ * @param {int} limit      - ограничение выборки
+ */
+model.isGetContentNew = (fk_site, pk_content, limit) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
+                " FROM `" + TABLE_NAME + "` WHERE `pk_content` > :pk_content AND `fk_site` = :fk_site" +
+                " LIMIT :limit;", {
+                fk_site,
+                pk_content,
+                limit
             })
             .then(rows => {
                 resolve(rows);
