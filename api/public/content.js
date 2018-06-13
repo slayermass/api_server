@@ -6,7 +6,7 @@ const router = require('express').Router(),
 /**
  * getting a content for public site (index page)
  *
- * @see model.find
+ * @see model.findPublic
  */
 router.get('/content', async (req, res, next) => {
     let {query} = req;
@@ -14,16 +14,15 @@ router.get('/content', async (req, res, next) => {
     // validate
     query.limit = parseInt(query.limit, 10) || 20;
     query.fk_site = parseInt(query.fk_site, 10);
-    query.isdeleted = parseInt(query.isdeleted, 10) || -1;
-    query.status = parseInt(query.status, 10) || 0;
     query.withcount = parseInt(query.withcount, 10) || 0;
     query.offset = parseInt(query.offset, 10) || 0;
+    query.select = (!empty(query.select)) ? query.select.split(',') : []; // только определенные поля на выбор
 
-    if (isNaN(query.fk_site) || query.fk_site < 1) {
+    if (isNaN(query.fk_site) || query.fk_site < 1 || query.select.length === 0) {
         next(BadRequestError());
     } else {
         try {
-            let data = await model.find(query);
+            let data = await model.findPublic(query);
 
             res.send(data);
         } catch (err) {

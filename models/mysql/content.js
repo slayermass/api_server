@@ -750,4 +750,83 @@ model.isGetContentNew = (fk_site, pk_content, limit) => {
     });
 };
 
+
+/** -------- PUBLIC ---------- */
+
+/**
+ * Найти контент для фронтенда
+ *
+ * @param {Object} params       - параметры
+ *      @param {array} select   - массив полей для выборки
+ *
+ * @returns {Promise<any>}
+ */
+model.findPublic = (params) => {
+    let orderby = (params.orderby) ? params.orderby : 'pk_content DESC';
+
+    let select = params.select.map(el => `\`${el}\``).join(',');
+
+    return new Promise((resolve, reject) => {
+        async.parallel({
+            content_data: (callback) => { //основная инфа
+                mysql
+                    .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
+                        " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " +
+                        " ORDER BY " + orderby + " LIMIT :limit OFFSET :offset"
+                        , {
+                            fk_site: params.fk_site,
+                            limit: params.limit,
+                            offset: params.offset
+                        })
+                    .then(rows => {
+                        callback(null, rows);
+                    })
+                    .catch(err => {
+                        if (err === EMPTY_SQL) {
+                            callback(null, {});
+                        } else {
+                            callback(err);
+                        }
+                    });
+            },
+            content_count: (callback) => { //кол-во записей
+                if (params.withcount === 1) {
+                    mysql
+                        .getSqlQuery("SELECT COUNT(*) AS count, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countstatus0, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2, " +
+                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 3) AS countstatus3 " +
+                            "FROM `" + TABLE_NAME + "`", {
+                            fk_site: params.fk_site,
+                        })
+                        .then(row => {
+                            callback(null, {
+                                countstatus0: row[0].countstatus0,
+                                countstatus1: row[0].countstatus1,
+                                countstatus2: row[0].countstatus2,
+                                countstatus3: row[0].countstatus3
+                            });
+                        })
+                        .catch(err => {
+                            callback(err);
+                        });
+                } else {
+                    callback(null, {});
+                }
+            }
+        }, (err, results) => {
+            if (err) {
+                errorlog(err);
+                return reject(err);
+            }
+
+            resolve({
+                data: results.content_data,
+                count: results.content_count
+            });
+        });
+    });
+};
+
 module.exports = model;
