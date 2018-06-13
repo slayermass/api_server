@@ -758,6 +758,7 @@ model.isGetContentNew = (fk_site, pk_content, limit) => {
  *
  * @param {Object} params       - параметры
  *      @param {array} select   - массив полей для выборки
+ *      @param {int} chosen     - 1-избранные отдельно, 0-все новости по порядку
  *
  * @returns {Promise<any>}
  */
@@ -769,9 +770,15 @@ model.findPublic = (params) => {
     return new Promise((resolve, reject) => {
         async.parallel({
             content_data: (callback) => { //основная инфа
+                let add_sql = '';
+
+                if (params.chosen === 1) {
+                    add_sql = ' AND `is_chosen` = 0 ';
+                }
+
                 mysql
                     .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
-                        " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " +
+                        " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " + add_sql +
                         " ORDER BY " + orderby + " LIMIT :limit OFFSET :offset"
                         , {
                             fk_site: params.fk_site,
@@ -814,6 +821,31 @@ model.findPublic = (params) => {
                 } else {
                     callback(null, {});
                 }
+            },
+            content_chosen: (callback) => { //кол-во записей
+                if (params.chosen === 1) {
+                    mysql
+                        .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
+                            " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 AND `is_chosen` = 1" +
+                            " ORDER BY " + orderby + ";"
+                            , {
+                                fk_site: params.fk_site,
+                                limit: params.limit,
+                                offset: params.offset
+                            })
+                        .then(rows => {
+                            callback(null, rows);
+                        })
+                        .catch(err => {
+                            if (err === EMPTY_SQL) {
+                                callback(null, {});
+                            } else {
+                                callback(err);
+                            }
+                        });
+                } else {
+                    callback(null, {});
+                }
             }
         }, (err, results) => {
             if (err) {
@@ -823,7 +855,8 @@ model.findPublic = (params) => {
 
             resolve({
                 data: results.content_data,
-                count: results.content_count
+                count: results.content_count,
+                chosen: results.content_chosen
             });
         });
     });

@@ -8,3 +8,6 @@ data.author = await mysql
 
 ---contentone---
 withimages public(url_file, ext) + private(все)
+
+------
+graphql
