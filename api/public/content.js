@@ -55,7 +55,7 @@ router.get('/contentone', async (req, res, next) => {
         next(BadRequestError());
     } else {
             try {
-                let data = await model.findOne(query);
+                let data = await model.findOnePublic(query);
 
                 res.send(data);
             } catch (err) {

@@ -1,13 +1,13 @@
 const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
-    model = require('../../models/mysql/content_material_theme');
+    model = require('../../models/mysql/content_material_rubric');
 
 /**
- * получение всех типов материала
+ * получение всех рубрик материала
  *
  * @see model.getAll()
  */
-router.get('/material_themes', (req, res, next) => {
+router.get('/material_rubrics', (req, res, next) => {
     const fk_site = parseInt(req.query.fk_site, 10);
 
     //проверка
