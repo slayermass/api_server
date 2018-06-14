@@ -668,6 +668,7 @@ model.unsetChosen = (fk_site) => {
  * @param {Object} params       - параметры
  *      @param {array} select   - массив полей для выборки
  *      @param {int} chosen     - 1-избранные отдельно, 0-все новости по порядку
+ *      @param {int} id_rubric  - ид рубрики материала
  *
  * @returns {Promise<any>}
  */
@@ -686,15 +687,20 @@ model.findPublic = (params) => {
                     add_sql = ' AND `is_chosen` = 0 ';
                 }
 
+                if (params.id_rubric > 0) {
+                    add_sql = ' AND `fk_material_rubric` = :fk_material_rubric ';
+                }
+
                 mysql
                     .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
                         " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " + // if(name_material_rubric) ?
                         " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " + add_sql +
                         " ORDER BY " + orderby + " LIMIT :limit OFFSET :offset"
                         , {
-                            fk_site: params.fk_site,
-                            limit: params.limit,
-                            offset: params.offset
+                            fk_site             : params.fk_site,
+                            limit               : params.limit,
+                            offset              : params.offset,
+                            fk_material_rubric  : params.id_rubric
                         })
                     .then(rows => {
                         callback(null, rows);
