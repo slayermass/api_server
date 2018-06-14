@@ -72,7 +72,7 @@ router.get('/contentone', async (req, res, next) => {
  *
  * @see contentModel.isGetContentNew
  */
-router.get('/contentnew', async (req, res, next) => {
+router.get('/iscontentnew', async (req, res, next) => {
     // validate
     const fk_site = parseInt(req.query.fk_site, 10);
     const pk_content = parseInt(req.query.pk_content, 10);

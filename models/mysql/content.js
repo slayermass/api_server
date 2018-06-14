@@ -722,35 +722,6 @@ model.unsetChosen = (fk_site) => {
     });
 };
 
-/**
- * проверить есть ли новости после данной(pk_content) и отдать (limit) штук
- *
- * TODO сделать по slug_content - найти ид
- *
- * @param {int} fk_site    - ид сайта
- * @param {int} pk_content - ид проверяемой новости
- * @param {int} limit      - ограничение выборки
- */
-model.isGetContentNew = (fk_site, pk_content, limit) => {
-    return new Promise((resolve, reject) => {
-        mysql
-            .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
-                " FROM `" + TABLE_NAME + "` WHERE `pk_content` > :pk_content AND `fk_site` = :fk_site" +
-                " LIMIT :limit;", {
-                fk_site,
-                pk_content,
-                limit
-            })
-            .then(rows => {
-                resolve(rows);
-            })
-            .catch(() => {
-                reject();
-            });
-    });
-};
-
-
 /** -------- PUBLIC ---------- */
 
 /**
@@ -859,6 +830,35 @@ model.findPublic = (params) => {
                 chosen: results.content_chosen
             });
         });
+    });
+};
+
+/**
+ * проверить есть ли новости после данной(pk_content) и отдать (limit) штук
+ *
+ * TODO сделать по slug_content - найти ид. pk_content не должен мелькать
+ *
+ * @param {int} fk_site    - ид сайта
+ * @param {int} pk_content - ид проверяемой новости
+ * @param {int} limit      - ограничение выборки
+ */
+model.isGetContentNew = (fk_site, pk_content, limit) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
+                " FROM `" + TABLE_NAME + "` " +
+                " WHERE `pk_content` > :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
+                " ORDER BY `pk_content` DESC LIMIT :limit;", {
+                fk_site,
+                pk_content,
+                limit
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(() => {
+                reject();
+            });
     });
 };
 
