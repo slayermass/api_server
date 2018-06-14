@@ -66,8 +66,8 @@ router.get('/menus', (req, res, next) => {
  * @see modelMenu.findOne
  */
 router.get('/menu', (req, res, next) => {
-    let fk_site = parseInt(req.query.fk_site, 10),
-        pk_menu = parseInt(req.query.pk_menu, 10);
+    const fk_site = parseInt(req.query.fk_site, 10);
+    const pk_menu = parseInt(req.query.pk_menu, 10);
 
     //проверка
     if ((isNaN(fk_site) || fk_site < 1) || (isNaN(pk_menu) || pk_menu < 1)) {

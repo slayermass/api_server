@@ -16,4 +16,6 @@ router.use(require('./text_blocks'));
 
 router.use(require('./material_types'));
 
+router.use(require('./material_themes'));
+
 module.exports = router;
