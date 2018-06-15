@@ -1,5 +1,8 @@
 const router = require('express').Router();
 
+const MY_NAMESPACE = require("../../config/index").uuid;
+const uuidv5 = require('uuid/v5');
+
 const
     path = require('path'),
     fs = require('fs'),
@@ -33,9 +36,11 @@ const
             }
         },
         filename: function (req, file, cb) {
+            // uuid + random name
+            let file_name = uuidv5(`${Date.now()}_${parseInt(Math.random() * 100000)}`, MY_NAMESPACE);
             let ext = path.extname(file.originalname);
 
-            cb(null, `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`); // имя должно быть точно уникальным
+            cb(null, `${file_name}${ext}`);
         }
     }),
 

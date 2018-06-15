@@ -1,8 +1,9 @@
-let router = require('express').Router();
+const router = require('express').Router();
 const auth_id = require("../../config/index").auth_id;
+
 /*const
     requestIp = require('request-ip'),
-    allowIps = ['::1', '::ffff:109.195.33.201'];*/
+    allowedIps = ['::1', '::ffff:109.195.33.201'];*/
 
 /**
  * проверка по ип - не очень. если ты с другого компа и через сделанный фронтенд заходишь,
