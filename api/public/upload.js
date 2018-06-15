@@ -1,10 +1,10 @@
 const router = require('express').Router();
 
-const
-    fs = require('fs'),
-    mime = require('mime-types'),
-    BadRequestError = require('../../functions').BadRequestError,
-    upload_files = require('../../models/mysql/upload_files');
+const fs = require('fs');
+const mime = require('mime-types');
+const BadRequestError = require('../../functions').BadRequestError;
+const NotFoundError = require('../../functions').NotFoundError;
+const upload_files = require('../../models/mysql/upload_files');
 
 /**
  * потоковая отдача файлов
@@ -42,7 +42,7 @@ router.get('/upload/f/:n', (req, res, next) => {
                 });
             })
             .catch(() => {
-                next(BadRequestError());
+                next(NotFoundError());
             });
     }
 });

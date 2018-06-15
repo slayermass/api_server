@@ -78,6 +78,19 @@ module.exports.BadRequestError = (msg = '') => {
 };
 
 /**
+ * except an error - http code 404
+ *
+ * @param {String} msg - Human-readable description of the error.
+ *
+ * @returns Error
+ */
+module.exports.NotFoundError = (msg = '') => {
+    let err = new Error(msg);
+    err.status = 404;
+    return err;
+};
+
+/**
  * except an error - http code 500
  *
  * @param {String} msg - Human-readable description of the error.
@@ -86,7 +99,7 @@ module.exports.BadRequestError = (msg = '') => {
  */
 module.exports.InternalServerError = (msg = '') => {
     let err = new Error(msg);
-    err.status = 450;
+    err.status = 500;
     return err;
 };
 
