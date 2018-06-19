@@ -197,12 +197,15 @@ router.post('/contenttestcontent', async (req, res, next) => {
 
         switch (data['type_code']) {
             case 2:
+            case '2':
                 fk_material_rubric = 2;
                 break;
             case 3:
+            case '3':
                 fk_material_rubric = 3;
                 break;
             case 9:
+            case '9':
                 fk_material_rubric = 4;
                 break;
         }
