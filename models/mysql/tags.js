@@ -44,7 +44,7 @@ model.checkSave = (fk_site, tags) => {
                     .catch(err => {
                         if (err === EMPTY_SQL) { // не найдено
                             mysql
-                                .getSqlQuery("INSERT INTO `" + TABLE_NAME + "`(`name_tag`, `fk_site`) VALUES (:name_tag, :fk_site);", {
+                                .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` (`name_tag`, `fk_site`) VALUES (:name_tag, :fk_site);", {
                                     name_tag,
                                     fk_site
                                 })

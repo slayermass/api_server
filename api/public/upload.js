@@ -35,9 +35,7 @@ router.get('/upload/f/:n', (req, res, next) => {
                         let readStream = fs.createReadStream(filePath);
                         readStream.pipe(res);
                     } else {
-                        let err = new Error();
-                        err.status = 404;
-                        next(err);
+                        next(NotFoundError());
                     }
                 });
             })

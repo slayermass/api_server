@@ -18,6 +18,9 @@ const
     getImageTypeFromUrl = require('../../functions').getImageTypeFromUrl,
     download = require('image-downloader');
 
+const MY_NAMESPACE = require("../../config/index").uuid;
+const uuidv5 = require('uuid/v5');
+
 mysql.formatBind();
 
 /**
@@ -143,7 +146,10 @@ upload_files.newByLink = async (fk_site, url, original_name_file) => {
         try {
             uploadPath = `${upload_path}/${upload_destiny}`;
 
-            nameFile = `${Date.now()}_${parseInt(Math.random() * 100000)}${ext}`;
+            // uuid + random name
+            let file_name = uuidv5(`${Date.now()}_${parseInt(Math.random() * 100000)}`, MY_NAMESPACE);
+
+            nameFile = `${file_name}${ext}`;
 
             // полное уникальное имя
             let fileFullName = `${full_path}/${nameFile}`;
