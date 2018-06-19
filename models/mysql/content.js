@@ -549,11 +549,22 @@ model.incrViews = async (fk_site, pk_content, slug_content, req) => {
     try {
         let pk_content_found = await model.findPkBySlug(fk_site, pk_content, slug_content);
 
-        await mysql // SELECT INET6_NTOA(ip)
-            .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
+        let is = await mysql // SELECT INET6_NTOA(ip)
+            .getSqlQuery("SELECT `fk_content` FROM `" + TABLE_NAME_VIEWS + "` " +
+                "WHERE `ip` = INET6_ATON(:ip) AND `fk_content` = :pk_content AND STR_TO_DATE(`timestamp`, \"%Y-%m-%d\") = CURDATE();", {
                 pk_content: pk_content_found,
                 ip
             });
+
+        // нет записей
+        if(is.length === undefined) {
+            await mysql
+                .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
+                    pk_content: pk_content_found,
+                    ip
+                });
+        }
+
         return true;
     } catch (err) {
         return false;
