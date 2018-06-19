@@ -125,15 +125,45 @@ router.post('/contenttest', async (req, res, next) => {
 });
 
 /**
+ * { image: '/img/2018-06-19/thumbs/720x400/2c2b65ecb50212b2c5b83a80f4d12010.jpg',
+  fk_site: 1,
+  domain: 'http://politsib.ru/',
+  id_news: '104733' }
+
+ */
+router.post('/contenttestimage', async (req, res, next) => {
+    const image = req.body.image;
+    const domain = req.body.domain;
+    const fk_site = parseInt(req.body.fk_site, 10);
+    const id_news = parseInt(req.body.id_news, 10); // old id
+
+    upload_files
+        .newByLink(fk_site, `${domain}${image}`, '')
+        .then(() => {
+            mysql
+                .getSqlQuery("SELECT `name_file` FROM upload_files WHERE `link` LIKE '%"+image+"'")
+                .then(data => {
+                    mysql
+                        .getSqlQuery("UPDATE `content` SET `headimgsrc_content` = :img WHERE `id_news_old` = :id_news",{
+                            img: `http://109.195.33.205/papi/upload/f/${data[0].name_file}`,
+                            id_news
+                        })
+                        .then(() => {
+                            console.log('главное фото установлено');
+                        })
+                        .catch(err=>{
+                            console.log('проблемы с главным фото', err);
+                        });
+                }).catch(e=>{});
+        }).catch(e => {});
+
+    console.log(req.body);
+
+    res.json({success: true});
+});
+
+/**
  * загрузка новостей, обработка и превращение в контент
- * { tags: '1,15',
-  content: '<p>lorem inpus</p>',
-  title: 'Заголовок',
-  create_date: '2018-06-18 17:35:16',
-  author_id: '19',
-  status: '2',
-  id_news: '104697',
-  type_code: '10' }
  */
 
 const Entities = require('html-entities').XmlEntities,
@@ -154,7 +184,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
         const slug_content = data.id_news;
         const id_news_old = data.id_news;
         const title_content = data.title;
-        const text_content = entities.encode(data.content);
+        let text_content = entities.encode(data.content);
         const create_date = data.create_date;
         let publish_date = data.date;
         const fk_user_created = switchUser(data.author_id);
@@ -179,7 +209,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
 
         if(publish_date.length < 2) publish_date = create_date;
 
-        console.log(data, toupdate);
+        let fk_content;
 
         // создать
         if(toupdate === 0) {
@@ -204,6 +234,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
                     is_enabled_comments
                 })
                 .then(row => {
+                    fk_content = row.insertId;
                     console.log('вставлено');
 
                     // вставка тегов
@@ -288,7 +319,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
                                 id_news_old
                             })
                             .then(data => {
-                                const fk_content = data[0].pk_content;
+                                fk_content = data[0].pk_content;
 
                                 mysql
                                     .getSqlQuery("DELETE FROM `r_content_to_tags` WHERE `fk_content` = :fk_content;", {
@@ -345,10 +376,11 @@ router.post('/contenttestcontent', async (req, res, next) => {
                                             }
                                         }
                                     }).catch(err => {
-                                });
+                                    });
                                 // end вставка тегов
-                            }).catch(err => {
-                        });
+                            })
+                            .catch(err => {
+                            });
                     }
                 })
                 .catch(err => {
@@ -356,17 +388,64 @@ router.post('/contenttestcontent', async (req, res, next) => {
                 });
         }
 
+        // imgs
+        text_content = entities.decode(text_content);
 
+        if(/<img.*?src="(.*?)".*?>/gm.test(text_content)) {
+            let arr = [];
+
+            text_content.replace(/<img.*?src="(.*?)".*?>/gm, function (s, p) {
+                arr.push(p);
+
+                return p;
+            });
+
+            let imgs = await findimgs(arr);
+
+            for(let i = 0; i < imgs.length; i++) {
+                for(let j = 0; j < imgs[i].length; j++) {
+                    text_content = text_content.replace(imgs[i][j].link_orig, `http://109.195.33.205/papi/upload/f/${imgs[i][j].name_file}`);
+                }
+            }
+
+            mysql.
+            getSqlQuery("UPDATE `content` SET `text_content` = :text_content WHERE `pk_content` = :pk_content;"
+            , {
+                pk_content: fk_content,
+                text_content: entities.encode(text_content)
+            })
+                .then(()=>{
+                    console.log('text_content изменен');
+                })
+                .catch(err =>{
+                    console.log('text_content проблемы', err);
+                })
+        }
+        // end imgs
 
         res.json({success: true});
     }
 });
 
+async function findimgs(arr) {
+    let sq = [];
+
+    for(let i = 0; i < arr.length; i++) {
+        sq.push(
+            mysql.
+                getSqlQuery("SELECT `name_file`, '"+arr[i]+"' AS `link_orig` FROM `upload_files` WHERE `link` LIKE '%"+arr[i]+"';"
+                , {})
+        )
+    }
+
+    return Promise.all(sq);
+}
+
 function switchUser(id) {
     // 170 - ид главного редактора сейчас
 
     let arr = {1 : 170, 3 : 19, 4 : 331, 5 : 322, 10 : 279, 11 : 403, 13 : 39, 14 : 415,
-        15 : 414, 16 : 104, 17 : 2, 19 : 413, 20 : 430, 21 : 144, 22 : 151,
+        15 : 414, 16 : 104, 17 : 2, 19 : 170, 20 : 430, 21 : 144, 22 : 151,
         23 : 473, 24 : 494, 25 : 507, 26 : 522, 27 : 24, 28 : 555, 29 : 567, 30 : 170, 32: 170
     };
 
