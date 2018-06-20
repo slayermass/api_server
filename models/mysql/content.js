@@ -798,13 +798,16 @@ model.findPublic = (params) => {
  * @param {int} fk_site    - ид сайта
  * @param {int} pk_content - ид проверяемой новости
  * @param {int} limit      - ограничение выборки
+ * @param {boolean} findnew - искать новые, последние(true) или старые(false) от данного ид
  */
-model.isGetContentNew = (fk_site, pk_content, limit) => {
+model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
+    let sql = (findnew) ? '>' : '<';
+
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
                 " FROM `" + TABLE_NAME + "` " +
-                " WHERE `pk_content` > :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
+                " WHERE `pk_content` " + sql + " :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
                 " ORDER BY `pk_content` DESC LIMIT :limit;", {
                 fk_site,
                 pk_content,
@@ -844,7 +847,7 @@ model.findOnePublic = async (params) => {
         let [content_data, content_tags] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `title_content`, `publish_date`, `headimgsrc_content`," +
-                    " `intro_content`, `text_content`, `name_material_rubric`, count(ip) AS views" +
+                    " `intro_content`, `fk_user_created`, `text_content`, `name_material_rubric`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                     " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric`" +
@@ -957,25 +960,29 @@ model.findOnePublic = async (params) => {
 
         if (user_data.length) {
             data.author = {
-                lastname: user_data[0].lastname_content_author,
-                name: user_data[0].name_content_author,
-                secondname: user_data[0].secondname_content_author
+                lastname    : user_data[0].lastname_content_author,
+                name        : user_data[0].name_content_author,
+                secondname  : user_data[0].secondname_content_author
             };
         } else { // некий пустой объект
             data.author = {
-                lastname: 'Неизвестно',
-                name: '',
-                secondname: ''
+                lastname    : 'Неизвестно',
+                name        : '',
+                secondname  : ''
             };
         }
 
     } catch (err) {
+        errorlog(err);
+
         data.author = {
             lastname: 'Неизвестно',
             name: '',
             secondname: ''
         };
     }
+
+    delete data.data.fk_user_created;
     // end найти автора контента
 
     return data;
