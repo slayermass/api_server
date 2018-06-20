@@ -6,7 +6,9 @@ const
     TABLE_NAME = 'content',
     TABLE_NAME_VIEWS = 'content_views',
     TABLE_NAME_HISTORY = 'content_history',
+    TABLE_NAME_TAGS = require('../../models/mysql/tags').getTableName(),
     TABLE_NAME_RUBRIC = require('../../models/mysql/content_material_rubric').getTableName(),
+    TABLE_NAME_R_CONTENT_TO_TAGS = require('../../models/mysql/r_content_to_tags').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -59,7 +61,9 @@ model.findOne = async (params) => {
                     pk_content
                 }),
             await mysql
-                .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `r_content_to_tags` LEFT JOIN `tags` ON tags.pk_tag = fk_tag WHERE `fk_content` = :pk_content", {
+                .getSqlQuery("SELECT `pk_tag`, `name_tag` FROM `" + TABLE_NAME_R_CONTENT_TO_TAGS + "`" +
+                    " LEFT JOIN `tags` ON tags.pk_tag = fk_tag " +
+                    " WHERE `fk_content` = :pk_content", {
                     pk_content
                 })
         ]);
@@ -676,10 +680,15 @@ model.unsetChosen = (fk_site) => {
 /**
  * Найти контент для фронтенда
  *
+ * надо тестировать жестко
+ *
  * @param {Object} params       - параметры
  *      @param {array} select   - массив полей для выборки
  *      @param {int} chosen     - 1-избранные отдельно, 0-все новости по порядку
  *      @param {int} id_rubric  - ид рубрики материала
+ *      @param {String} name_tag - метка тега, прям по-русски. надо ее очищать
+ *      @param {int} status     - статус контента (0 - весь)
+ *      @param {int} withcount  - включить ли вывод кол-ва записей, учитывает входные параметры
  *
  * @returns {Promise<any>}
  */
@@ -689,21 +698,31 @@ model.findPublic = (params) => {
     // собрать в обернутую строку
     let select = params.select.map(el => `\`${el}\``).join(',');
 
+    // глобально необходимые доп.параметры поиска sql
+    let add_sql = '';
+    let left_join = '';
+
+    if (params.chosen === 1) {
+        add_sql += ' AND `is_chosen` = 0 ';
+    }
+
+    if (params.id_rubric > 0) {
+        add_sql += ' AND `fk_material_rubric` = :fk_material_rubric ';
+    }
+
+    if(params.name_tag.length) {
+        add_sql += ' AND `name_tag` = :name_tag ';
+        left_join += " LEFT JOIN `" + TABLE_NAME_R_CONTENT_TO_TAGS + "` ON `pk_content` = `fk_content`" +
+            " LEFT JOIN `" + TABLE_NAME_TAGS + "` ON `pk_tag` = `fk_tag` ";
+    }
+    // end глобально необходимые доп.параметры поиска sql
+
     return new Promise((resolve, reject) => {
         async.parallel({
             content_data: (callback) => { //основная инфа
-                let add_sql = '';
-
-                if (params.chosen === 1) {
-                    add_sql = ' AND `is_chosen` = 0 ';
-                }
-
-                if (params.id_rubric > 0) {
-                    add_sql = ' AND `fk_material_rubric` = :fk_material_rubric ';
-                }
-
                 mysql
                     .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
+                        left_join +
                         " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " + // if(name_material_rubric) ?
                         " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " + add_sql +
                         " ORDER BY " + orderby + " LIMIT :limit OFFSET :offset"
@@ -711,7 +730,8 @@ model.findPublic = (params) => {
                             fk_site             : params.fk_site,
                             limit               : params.limit,
                             offset              : params.offset,
-                            fk_material_rubric  : params.id_rubric
+                            fk_material_rubric  : params.id_rubric,
+                            name_tag            : params.name_tag
                         })
                     .then(rows => {
                         callback(null, rows);
@@ -728,12 +748,21 @@ model.findPublic = (params) => {
                 if (params.withcount === 1) {
                     mysql
                         .getSqlQuery("SELECT COUNT(*) AS count, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site) AS countstatus0, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 1) AS countstatus1, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 2) AS countstatus2, " +
-                            "(SELECT COUNT(*) FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `status_content` = 3) AS countstatus3 " +
-                            "FROM `" + TABLE_NAME + "`", {
-                            fk_site: params.fk_site,
+                            "(SELECT COUNT(pk_content) FROM `" + TABLE_NAME + "` " + left_join + " " +
+                                "WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site " + add_sql + ") AS countstatus0, " +
+                            "(SELECT COUNT(pk_content) FROM `" + TABLE_NAME + "` " + left_join + " " +
+                                "WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 " + add_sql + ") AS countstatus1, " +
+                            "(SELECT COUNT(pk_content) FROM `" + TABLE_NAME + "` " + left_join + " " +
+                                "WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 2 " + add_sql + ") AS countstatus2, " +
+                            "(SELECT COUNT(pk_content) FROM `" + TABLE_NAME + "` " + left_join + " " +
+                                "WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 3 " + add_sql + ") AS countstatus3 " +
+                            "FROM `" + TABLE_NAME + "`;"
+                        , {
+                            fk_site             : params.fk_site,
+                            limit               : params.limit,
+                            offset              : params.offset,
+                            fk_material_rubric  : params.id_rubric,
+                            name_tag            : params.name_tag
                         })
                         .then(row => {
                             callback(null, {

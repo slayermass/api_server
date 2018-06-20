@@ -19,6 +19,7 @@ router.get('/content', async (req, res, next) => {
     query.offset = parseInt(query.offset, 10) || 0;
     query.chosen = parseInt(query.chosen, 10) || 0;
     query.id_rubric = parseInt(query.id_rubric, 10) || 0;
+    query.name_tag = query.name_tag; // ГОЛЫЙ
     query.select = (!empty(query.select)) ? query.select.split(',') : []; // только определенные поля на выбор
 
     if (isNaN(query.fk_site) || query.fk_site < 1 || query.select.length === 0) {
