@@ -167,6 +167,30 @@ router.post('/contenttestimage', async (req, res, next) => {
 });
 
 /**
+ * удаление контента, не часто
+ */
+router.post('/contenttestdelete', async (req, res, next) => {
+    const fk_site = parseInt(req.body.fk_site, 10);
+    const id_news = parseInt(req.body.id, 10); // old id
+
+    console.log(fk_site, id_news);
+
+    mysql
+        .getSqlQuery("DELETE FROM `content` WHERE `id_news_old` = :id_news AND `fk_site` = :fk_site;", {
+            id_news,
+            fk_site
+        })
+        .then(() => {
+            console.log('удалено: ');
+        })
+        .catch(err => {
+            console.log('ошибка удаления: ',err);
+        })
+
+    res.json({success: true});
+});
+
+/**
  * загрузка новостей, обработка и превращение в контент
  */
 
@@ -301,9 +325,9 @@ router.post('/contenttestcontent', async (req, res, next) => {
                 });
         } else { // обновить
             mysql
-                .getSqlQuery("UPDATE `content` SET `title_content` = :title_content, `slug_content` = :slug_content, " +
+                .getSqlQuery("UPDATE `content` SET `title_content` = :title_content, `slug_content` = :slug_content, `update_date` = :update_date, " +
                     " `text_content` = :text_content, `status_content` = :status_content, `exclude_rss_yandex` =:exclude_rss_yandex, " +
-                    " `fk_material_rubric` = :fk_material_rubric, `is_enabled_comments` = :is_enabled_comments " +
+                    " `fk_material_rubric` = :fk_material_rubric, `is_enabled_comments` = :is_enabled_comments, `publish_date` =:publish_date " +
                     " WHERE `id_news_old` = :id_news_old;"
                     , {
                         title_content,
@@ -456,7 +480,7 @@ function switchUser(id) {
 
     let arr = {1 : 170, 3 : 19, 4 : 331, 5 : 322, 10 : 279, 11 : 403, 13 : 39, 14 : 415,
         15 : 414, 16 : 104, 17 : 2, 19 : 170, 20 : 430, 21 : 144, 22 : 151,
-        23 : 473, 24 : 494, 25 : 507, 26 : 522, 27 : 24, 28 : 555, 29 : 567, 30 : 170, 32: 170
+        23 : 473, 24 : 494, 25 : 507, 26 : 522, 27 : 24, 28 : 555, 29 : 567, 30 : 170, 32: 579
     };
 
     if(!id) return 170;
