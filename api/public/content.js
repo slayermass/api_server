@@ -71,32 +71,6 @@ router.get('/contentone', async (req, res, next) => {
 });
 
 /**
- * check if has content, get limited by id last news
- *
- * @see contentModel.isGetContentNew
- */
-/**router.get('/iscontentnew', async (req, res, next) => {
-    // validate
-    const fk_site = parseInt(req.query.fk_site, 10);
-    const pk_content = parseInt(req.query.pk_content, 10);
-    let limit = parseInt(req.query.limit, 10) || 20;
-
-    limit = (limit > 20) ? 20 : limit;
-
-    if (isNaN(fk_site) || isNaN(pk_content) || pk_content < 1 || fk_site < 1) {
-        next(BadRequestError());
-    } else {
-        try {
-            let data = await model.isGetContentNew(fk_site, pk_content, limit);
-
-            res.send(data);
-        } catch (err) {
-            next(err);
-        }
-    }
-});*/
-
-/**
  * getting a content for public site
  *
  * @see contentModel.getPublicContentOnly
@@ -220,6 +194,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
         const fk_user_created = switchUser(data.author_id);
         const status_content = data.status;
         const is_enabled_comments = data.comments;
+        const exclude_rss_yandex = data.exclude_rss_yandex;
         let tags = data.tags;
         if(tags.length) tags = tags.split(',');
 
@@ -250,10 +225,10 @@ router.post('/contenttestcontent', async (req, res, next) => {
                 .getSqlQuery("INSERT INTO `content` " +
                     "(`title_content`, `slug_content`, `text_content`, `id_news_old`, " +
                     " `fk_site`, `status_content`, `fk_user_created`, `publish_date`," +
-                    " `fk_material_rubric`, `create_date`, `is_enabled_comments`)" +
+                    " `fk_material_rubric`, `create_date`, `is_enabled_comments`, `exclude_rss_yandex`)" +
                     " VALUES (:title_content, :slug_content, :text_content, :id_news_old," +
                     " :fk_site, :status_content, :fk_user_created, :publish_date," +
-                    " :fk_material_rubric, :create_date, :is_enabled_comments);", {
+                    " :fk_material_rubric, :create_date, :is_enabled_comments, :exclude_rss_yandex);", {
                     title_content,
                     slug_content,
                     text_content,
@@ -264,7 +239,8 @@ router.post('/contenttestcontent', async (req, res, next) => {
                     publish_date,
                     fk_material_rubric,
                     create_date,
-                    is_enabled_comments
+                    is_enabled_comments,
+                    exclude_rss_yandex
                 })
                 .then(row => {
                     fk_content = row.insertId;
@@ -326,7 +302,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
         } else { // обновить
             mysql
                 .getSqlQuery("UPDATE `content` SET `title_content` = :title_content, `slug_content` = :slug_content, " +
-                    " `text_content` = :text_content, `status_content` = :status_content, " +
+                    " `text_content` = :text_content, `status_content` = :status_content, `exclude_rss_yandex` =:exclude_rss_yandex, " +
                     " `fk_material_rubric` = :fk_material_rubric, `is_enabled_comments` = :is_enabled_comments " +
                     " WHERE `id_news_old` = :id_news_old;"
                     , {
@@ -340,7 +316,8 @@ router.post('/contenttestcontent', async (req, res, next) => {
                         publish_date,
                         fk_material_rubric,
                         create_date,
-                        is_enabled_comments
+                        is_enabled_comments,
+                        exclude_rss_yandex
                     })
                 .then(() => {
                     console.log('обновлено');

@@ -710,7 +710,7 @@ model.findPublic = (params) => {
         add_sql += ' AND `fk_material_rubric` = :fk_material_rubric ';
     }
 
-    if(params.name_tag.length) {
+    if(!empty(params.name_tag) && params.name_tag.length) {
         add_sql += ' AND `name_tag` = :name_tag ';
         left_join += " LEFT JOIN `" + TABLE_NAME_R_CONTENT_TO_TAGS + "` ON `pk_content` = `fk_content`" +
             " LEFT JOIN `" + TABLE_NAME_TAGS + "` ON `pk_tag` = `fk_tag` ";
