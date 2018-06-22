@@ -325,7 +325,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
                 });
         } else { // обновить
             mysql
-                .getSqlQuery("UPDATE `content` SET `title_content` = :title_content, `slug_content` = :slug_content, `update_date` = :update_date, " +
+                .getSqlQuery("UPDATE `content` SET `title_content` = :title_content, `slug_content` = :slug_content, " +
                     " `text_content` = :text_content, `status_content` = :status_content, `exclude_rss_yandex` =:exclude_rss_yandex, " +
                     " `fk_material_rubric` = :fk_material_rubric, `is_enabled_comments` = :is_enabled_comments, `publish_date` =:publish_date " +
                     " WHERE `id_news_old` = :id_news_old;"
