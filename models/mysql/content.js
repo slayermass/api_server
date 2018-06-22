@@ -675,6 +675,14 @@ model.unsetChosen = (fk_site) => {
     });
 };
 
+/**
+ * get a table name of a model
+ * @returns {string}
+ */
+model.getTableName = () => {
+    return TABLE_NAME;
+};
+
 /** -------- PUBLIC ---------- */
 
 /**
@@ -683,7 +691,7 @@ model.unsetChosen = (fk_site) => {
  * надо тестировать жестко
  *
  * @param {Object} params       - параметры
- *      @param {array} select   - массив полей для выборки
+ *      @param {array} select   - массив полей дляgetTableName выборки
  *      @param {int} chosen     - 1-избранные отдельно, 0-все новости по порядку
  *      @param {int} id_rubric  - ид рубрики материала
  *      @param {String} name_tag - метка тега, прям по-русски. надо ее очищать
