@@ -18,4 +18,6 @@ router.use(require('./material_types'));
 
 router.use(require('./material_rubrics'));
 
+router.use(require('./mainpage'));
+
 module.exports = router;

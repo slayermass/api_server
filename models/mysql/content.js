@@ -693,7 +693,7 @@ model.unsetChosen = (fk_site) => {
  * @returns {Promise<any>}
  */
 model.findPublic = (params) => {
-    let orderby = (params.orderby) ? params.orderby : 'pk_content DESC';
+    let orderby = (params.orderby) ? params.orderby : ' `publish_date` DESC ';
 
     // собрать в обернутую строку
     let select = params.select.map(el => `\`${el}\``).join(',');
