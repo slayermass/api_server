@@ -8,4 +8,6 @@ router.use(require('./upload'));
 
 router.use(require('./text_blocks'));
 
+router.use(require('./mainpage'));
+
 module.exports = router;

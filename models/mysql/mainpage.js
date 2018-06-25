@@ -5,6 +5,7 @@ let model = function () {};
 const
     TABLE_NAME = 'main_page',
     TABLE_NAME_CONTENT = require('./content').getTableName(),
+    TABLE_NAME_CONTENT_MATERIAL_RUBRIC = require('./content_material_rubric').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -163,6 +164,77 @@ model.getMainpageInfo = async (fk_site) => {
                 reject(err);
             });
     });
+};
+
+/** -------- PUBLIC ---------- */
+
+/**
+ * получение инфы о главной странице по дате
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {array} select - массив полей для выборки
+ * @returns {Array}     - краткие данные контента в строгом порядке сохранения
+ */
+model.getMainpagePublic = async (fk_site, select) => {
+    // собрать в обернутую строку
+    const add_select = select.map(el => `\`${el}\``).join(',');
+
+    try {
+        let mainpage_data = await new Promise((resolve, reject) => {
+            mysql
+                .getSqlQuery("SELECT `data` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `date` DESC;", {
+                    fk_site
+                }).then(rows => {
+                    resolve(rows[0]);
+                })
+                .catch(err => {
+                    errorlog(err);
+                    reject(err);
+                });
+        });
+
+        const ids_content = JSON.parse(mainpage_data.data);
+
+        let content_data = await new Promise((resolve, reject) => {
+            mysql
+                .getSqlQuery("SELECT " + add_select +
+                    " FROM `" + TABLE_NAME_CONTENT + "` " +
+                    " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
+                    " WHERE `pk_content` IN (:ids_content);", {
+                    fk_site,
+                    ids_content
+                }).then(rows => {
+                    resolve(rows);
+                })
+                .catch(err => {
+                    errorlog(err);
+                    reject(err);
+                });
+        });
+
+        // привести к удобному виду
+        let arr = {};
+
+        for(let i = 0; i < content_data.length; i++) {
+            arr[content_data[i].pk_content] = content_data[i];
+        }
+        // end привести к удобному виду
+
+        // привести к порядку из выборки
+        let end_data = [];
+
+        for(let i = 0; i < ids_content.length; i++) {
+            end_data.push(arr[ids_content[i]]);
+        }
+        // end привести к порядку из выборки
+
+        return {
+            success : true,
+            data    : end_data
+        };
+    } catch (err) {
+        errorlog(err);
+    }
 };
 
 module.exports = model;
