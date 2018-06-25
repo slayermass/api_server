@@ -845,7 +845,7 @@ model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
             .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
                 " FROM `" + TABLE_NAME + "` " +
                 " WHERE `pk_content` " + sql + " :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
-                " ORDER BY `pk_content` DESC LIMIT :limit;", {
+                " ORDER BY `date` DESC LIMIT :limit;", {
                 fk_site,
                 pk_content,
                 limit
