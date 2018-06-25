@@ -171,19 +171,25 @@ model.getMainpageInfo = async (fk_site) => {
 /**
  * получение инфы о главной странице по дате
  *
- * @param {int} fk_site - ид ресурса
- * @param {array} select - массив полей для выборки
+ * @param {object} query -
+ *      @param {int} fk_site                - ид ресурса
+ *      @param {array} select               - массив полей для выборки
+ *      @param {int} current_id_index_page  - текущий ид главной страницы
  * @returns {Array}     - краткие данные контента в строгом порядке сохранения
  */
-model.getMainpagePublic = async (fk_site, select) => {
+model.getMainpagePublic = async (query) => {
     // собрать в обернутую строку
-    const add_select = select.map(el => `\`${el}\``).join(',');
+    const add_select = query.select.map(el => `\`${el}\``).join(',');
+
+    const add_sql = (query.current_id_index_page) ? ' AND `id_index_page` < :current_id_index_page ' : '';
 
     try {
         let mainpage_data = await new Promise((resolve, reject) => {
             mysql
-                .getSqlQuery("SELECT `data` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site ORDER BY `date` DESC;", {
-                    fk_site
+                .getSqlQuery("SELECT `id_index_page`, `data` FROM `" + TABLE_NAME + "` " +
+                    " WHERE `fk_site` = :fk_site " + add_sql + " ORDER BY `date` DESC;", {
+                    fk_site: query.fk_site,
+                    current_id_index_page: query.current_id_index_page
                 }).then(rows => {
                     resolve(rows[0]);
                 })
@@ -193,6 +199,13 @@ model.getMainpagePublic = async (fk_site, select) => {
                 });
         });
 
+        // если не найден - сразу нет
+        if(!(mainpage_data && mainpage_data.data && mainpage_data.data.length)) {
+            return {
+                success : false
+            };
+        }
+
         const ids_content = JSON.parse(mainpage_data.data);
 
         let content_data = await new Promise((resolve, reject) => {
@@ -201,7 +214,7 @@ model.getMainpagePublic = async (fk_site, select) => {
                     " FROM `" + TABLE_NAME_CONTENT + "` " +
                     " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
                     " WHERE `pk_content` IN (:ids_content);", {
-                    fk_site,
+                    fk_site: query.fk_site,
                     ids_content
                 }).then(rows => {
                     resolve(rows);
@@ -230,6 +243,7 @@ model.getMainpagePublic = async (fk_site, select) => {
 
         return {
             success : true,
+            id_index_page : mainpage_data.id_index_page,
             data    : end_data
         };
     } catch (err) {
