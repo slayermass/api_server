@@ -24,7 +24,7 @@ model.getTableName = () => {
 };
 
 /**
- * сохранение данных главной страницы
+ * сохранение(создание) данных главной страницы
  *
  * @param {int} fk_site - ид ресурса
  * @param {date} date   - дата для главной страницы
@@ -49,19 +49,44 @@ model.save = (fk_site, date, data) => {
 };
 
 /**
+ * сохранение(обновление) данных главной страницы
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {int} id_index_page - ид главной страницы (без даты)
+ * @param {String} data - json строка ид новостей по порядку
+ */
+model.update = (fk_site, id_index_page, data) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `data` = :data WHERE `id_index_page` = :id_index_page;", {
+                fk_site,
+                id_index_page,
+                data
+            })
+            .then(() => {
+                resolve();
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
  * получение инфы о главной странице по дате
  *
  * @param {int} fk_site - ид ресурса
- * @param {date} date   - дата показа/создания главной страницы
+ * @param {int} id_index_page - ид главной страницы (без даты)
  * @returns {Array}     - краткие данные контента в строгом порядке сохранения
  */
-model.getMainpageInfoByDate = async (fk_site, date) => {
+model.getMainpageInfoByDateOrId = async (fk_site, id_index_page) => {
     try {
         let mainpage_data = await new Promise((resolve, reject) => {
             mysql
-                .getSqlQuery("SELECT `data` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `date` = :date;", {
+                .getSqlQuery("SELECT `data` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `id_index_page` = :id_index_page;", {
                     fk_site,
-                    date
+                    id_index_page
                 }).then(rows => {
                     resolve(rows[0]);
                 })
@@ -116,6 +141,28 @@ model.getMainpageInfoByDate = async (fk_site, date) => {
     } catch (err) {
         errorlog(err);
     }
+};
+
+/**
+ * получение общей инфы о дате/данных страниц
+ *
+ * @param {int} fk_site - ид ресурса
+ */
+model.getMainpageInfo = async (fk_site) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `id_index_page`, `date` FROM `" + TABLE_NAME + "` " +
+                " WHERE `fk_site` = :fk_site ORDER BY `date` DESC;", {
+                fk_site
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
 };
 
 module.exports = model;
