@@ -103,7 +103,7 @@ router.get('/contentonly', async (req, res, next) => {
 
 /**
  * тест загрузки изображений, для синхронизации
- * TODO УДАЛИТЬ после переноса
+ * TODO УДАЛИТЬ после переноса ВСЕ НИЖЕ
  */
 const upload_files = require('../../models/mysql/upload_files');
 
@@ -126,6 +126,59 @@ router.post('/contenttest', async (req, res, next) => {
         res.json({success: true});
     }
 });
+
+/**
+ * перенос при создании комментариев
+ */
+router.post('/contentcomment', async (req, res, next) => {
+    let id_news = parseInt(req.body.id_news, 10),
+        info = req.body.info,
+        email = req.body.email,
+        text = req.body.text,
+        id_comment = parseInt(req.body.id_comment, 10),
+        fk_site = parseInt(req.body.fk_site, 10);
+
+    let pk_content = await mysql
+            .getSqlQuery("SELECT `pk_content` FROM content WHERE `id_news_old` = :id_news;", {
+                id_news
+            });
+    pk_content = pk_content[0].pk_content;
+
+    let saved = await mysql
+        .getSqlQuery("INSERT INTO  `content_comments` (`fk_content`, `text_comment`, `is_active`, `add_info`, `old_id_comment`)" +
+            " VALUES (:fk_content, :text_comment, 0, :add_info, :old_id_comment);", {
+            fk_content: pk_content,
+            text_comment: text,
+            old_id_comment: id_comment,
+            add_info : JSON.stringify({
+                email,
+                ip: info
+            })
+        });
+
+    res.json({success: true});
+});
+
+/**
+ * сделать коммент активным
+ */
+router.post('/contentcommentsetactive', async (req, res, next) => {
+    let id_comment = parseInt(req.body.id_comment, 10);
+
+    let pk_comment = await mysql
+        .getSqlQuery("SELECT `pk_comment` FROM content_comments WHERE `old_id_comment` = :id_comment;", {
+            id_comment
+        });
+    pk_comment = pk_comment[0].pk_comment;
+
+    mysql
+        .getSqlQuery("UPDATE content_comments SET is_active = 1 WHERE `pk_comment` = :pk_comment;", {
+            pk_comment
+        });
+
+    res.json({success: true});
+});
+
 
 /**
  * { image: '/img/2018-06-19/thumbs/720x400/2c2b65ecb50212b2c5b83a80f4d12010.jpg',
@@ -184,7 +237,7 @@ router.post('/contenttestdelete', async (req, res, next) => {
         })
         .catch(err => {
             console.log('ошибка удаления: ',err);
-        })
+        });
 
     res.json({success: true});
 });

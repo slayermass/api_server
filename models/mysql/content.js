@@ -1013,9 +1013,9 @@ model.findOnePublic = async (params) => {
         errorlog(err);
 
         data.author = {
-            lastname: 'Неизвестно',
-            name: '',
-            secondname: ''
+            lastname    : 'Неизвестно',
+            name        : '',
+            secondname  : ''
         };
     }
 

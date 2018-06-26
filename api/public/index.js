@@ -10,4 +10,6 @@ router.use(require('./text_blocks'));
 
 router.use(require('./mainpage'));
 
+router.use(require('./content_comments'));
+
 module.exports = router;
