@@ -9,6 +9,7 @@ const
     TABLE_NAME_TAGS = require('../../models/mysql/tags').getTableName(),
     TABLE_NAME_RUBRIC = require('../../models/mysql/content_material_rubric').getTableName(),
     TABLE_NAME_R_CONTENT_TO_TAGS = require('../../models/mysql/r_content_to_tags').getTableName(),
+    TABLE_NAME_COMMENTS = require('../../models/mysql/content_comments').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -24,6 +25,7 @@ const
     r_content_to_tagsmodel = require('./r_content_to_tags'),
     addWhere = require('../../functions').addWhere,
     uploadFilesModel = require('./upload_files'),
+    contentCommentsModel = require('./content_comments'),
     requestIp = require('request-ip');
 
 mysql.formatBind();
@@ -868,6 +870,7 @@ model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
  *      @param {int} pk_content      - ид контента
  *      @param {String} slug_content - метка контента
  *      @param {int} withimages      - включить ли изображения галерей(0,1)
+ *      @param {int} withcomments    - включить ли вывод комментариев
  *      @param {bool} wlc            - (true)не проваливаться внутрь, отмена рекурсивного поиска связанных новостей(друг на друга)
  */
 model.findOnePublic = async (params) => {
@@ -986,13 +989,25 @@ model.findOnePublic = async (params) => {
     }
     // end найти изображения галерей
 
+
+    // найти комментарии
+    if (params.withcomments > 0) {
+        try {
+            data.comments = await contentCommentsModel.commentsByContent(pk_content);
+        } catch (err) {
+            data.comments = [];
+        }
+    }
+    // end найти комментарии
+
+
     // найти автора контента
     try {
         let user_data = await mysql
             .getSqlQuery("SELECT `lastname_content_author`, `name_content_author`, `secondname_content_author`" +
                 " FROM `content_authors` WHERE `pk_content_author` = :fk_user_created", {
-                fk_site: params.fk_site,
-                fk_user_created: data.data.fk_user_created
+                fk_site         : params.fk_site,
+                fk_user_created : data.data.fk_user_created
             });
 
         if (user_data.length) {

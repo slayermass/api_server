@@ -4,7 +4,7 @@ let model = function () {};
 
 const
     TABLE_NAME = 'content_comments',
-    TABLE_NAME_CONTENT = require('./content').getTableName(),
+    TABLE_NAME_CONTENT = 'content', // так
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -75,6 +75,30 @@ model.checkContent = async (fk_site, fk_content) => {
             })
             .then(rows => {
                 resolve(!!(rows[0].e));
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
+ * все комментарии новости, без лимита
+ * сортировка по дате создания, последние вверх
+ *
+ * @param {int} fk_content  - ид контента
+ */
+model.commentsByContent = async (fk_content) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_comment`, `text_comment`, `create_date` FROM `" + TABLE_NAME + "`" +
+                " WHERE `fk_content` = :fk_content AND `is_active` = 1" +
+                " ORDER BY `create_date` DESC;", {
+                fk_content
+            })
+            .then(rows => {
+                resolve(rows);
             })
             .catch(err => {
                 errorlog(err);

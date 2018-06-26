@@ -49,6 +49,7 @@ router.get('/contentone', async (req, res, next) => {
     query.pk_content = parseInt(query.pk_content, 10) || 0;
     query.slug_content = query.slug_content || '';
     query.withimages = parseInt(query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
+    query.withcomments = parseInt(query.withcomments, 10); // (0,1) добавить ли комментарии
 
     if (
         (isNaN(query.fk_site) || query.fk_site < 1) ||
@@ -56,16 +57,16 @@ router.get('/contentone', async (req, res, next) => {
     ) {
         next(BadRequestError());
     } else {
-            try {
-                let data = await model.findOnePublic(query);
+        try {
+            let data = await model.findOnePublic(query);
 
-                res.send(data);
-            } catch (err) {
-                next(err);
-            }
+            res.send(data);
 
-        // увеличить просмотр
-        model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
+            // увеличить просмотр
+            model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
+        } catch (err) {
+            next(err);
+        }
     }
 });
 
