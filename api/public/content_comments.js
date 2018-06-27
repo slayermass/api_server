@@ -11,20 +11,20 @@ const entities = new Entities();
  * @see model.
  */
 router.post('/comment', async (req, res, next) => {
-    let {query} = req;
+    let {body} = req;
 
-    query.fk_site = parseInt(query.fk_site, 10);
-    query.fk_content = parseInt(query.fk_content, 10);
-    query.text_comment = entities.encode(query.text_comment);
-    query.name_author_comment = entities.encode(query.name_author_comment);
+    body.fk_site = parseInt(body.fk_site, 10);
+    body.fk_content = parseInt(body.fk_content, 10);
+    body.text_comment = entities.encode(body.text_comment);
+    body.name_author_comment = entities.encode(body.name_author_comment);
 
-    if(isNaN(query.fk_site) || query.fk_site < 1
-        || isNaN(query.fk_content) || query.fk_content < 1
-        || query.text_comment.length === 0 || query.name_author_comment.length === 0) {
+    if(isNaN(body.fk_site) || body.fk_site < 1
+        || isNaN(body.fk_content) || body.fk_content < 1
+        || body.text_comment.length === 0 || body.name_author_comment.length === 0) {
         next(BadRequestError());
     } else {
         try {
-            let data = await model.save(query);
+            let data = await model.save(body);
 
             res.send(data);
         } catch (err) {
