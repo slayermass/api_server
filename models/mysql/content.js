@@ -9,7 +9,7 @@ const
     TABLE_NAME_TAGS = require('../../models/mysql/tags').getTableName(),
     TABLE_NAME_RUBRIC = require('../../models/mysql/content_material_rubric').getTableName(),
     TABLE_NAME_R_CONTENT_TO_TAGS = require('../../models/mysql/r_content_to_tags').getTableName(),
-    TABLE_NAME_COMMENTS = require('../../models/mysql/content_comments').getTableName(),
+    TABLE_NAME_CONTENT_COMMENTS = require('../../models/mysql/content_comments').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -691,6 +691,7 @@ model.getTableName = () => {
  * Найти контент для фронтенда
  *
  * надо тестировать жестко
+ * + рефактор кода, надо переделывать уже точно
  *
  * @param {Object} params       - параметры
  *      @param {array} select   - массив полей дляgetTableName выборки
@@ -699,13 +700,15 @@ model.getTableName = () => {
  *      @param {String} name_tag - метка тега, прям по-русски. надо ее очищать
  *      @param {int} status     - статус контента (0 - весь)
  *      @param {int} withcount  - включить ли вывод кол-ва записей, учитывает входные параметры
+ *      @param {int} withcomments    - включить ли вывод комментариев
  *
  * @returns {Promise<any>}
  */
-model.findPublic = (params) => {
+model.findPublic = async (params) => {
     let orderby = (params.orderby) ? params.orderby : ' `publish_date` DESC ';
 
     // собрать в обернутую строку
+    if(!params.select.includes('pk_content')) params.select.push('pk_content');
     let select = params.select.map(el => `\`${el}\``).join(',');
 
     // глобально необходимые доп.параметры поиска sql
@@ -814,11 +817,27 @@ model.findPublic = (params) => {
                     callback(null, {});
                 }
             }
-        }, (err, results) => {
+        }, async (err, results) => {
             if (err) {
                 errorlog(err);
                 return reject(err);
             }
+
+
+            // найти кол-во комментариев отдельно
+            let pk_contents = [];
+            // если нет комментов, то отдавать 0
+            for(let i = 0; i < results.content_data.length; i ++) {
+                pk_contents.push(results.content_data[i].pk_content);
+                results.content_data[i].count_comments = 0;
+            }
+
+            let count_comments = await contentCommentsModel.countCommentsByContentIn(pk_contents);
+
+            for(let i = 0; i < results.content_data.length; i ++) {
+                results.content_data[i].count_comments = count_comments[results.content_data[i].pk_content] || 0;
+            }
+            // end найти кол-во комментариев отдельно
 
             resolve({
                 data: results.content_data,
@@ -847,12 +866,26 @@ model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
             .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
                 " FROM `" + TABLE_NAME + "` " +
                 " WHERE `pk_content` " + sql + " :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
-                " ORDER BY `date` DESC LIMIT :limit;", {
+                " ORDER BY `publish_date` DESC LIMIT :limit;", {
                 fk_site,
                 pk_content,
                 limit
             })
-            .then(rows => {
+            .then(async rows => {
+                // найти кол-во комментариев отдельно
+                let pk_contents = [];
+                // если нет комментов, то отдавать 0
+                for(let i = 0; i < rows.length; i ++) {
+                    pk_contents.push(rows[i].pk_content);
+                }
+
+                let count_comments = await contentCommentsModel.countCommentsByContentIn(pk_contents);
+
+                for(let i = 0; i < rows.length; i ++) {
+                    rows[i].count_comments = count_comments[rows[i].pk_content] || 0;
+                }
+                // end найти кол-во комментариев отдельно
+
                 resolve(rows);
             })
             .catch(() => {

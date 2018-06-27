@@ -5,6 +5,7 @@ let model = function () {};
 const
     TABLE_NAME = 'main_page',
     TABLE_NAME_CONTENT = require('./content').getTableName(),
+    TABLE_NAME_CONTENT_COMMENTS = require('./content_comments').getTableName(),
     TABLE_NAME_CONTENT_MATERIAL_RUBRIC = require('./content_material_rubric').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
@@ -170,6 +171,7 @@ model.getMainpageInfo = async (fk_site) => {
 
 /**
  * получение инфы о главной странице по дате
+ * + кол-во активных комментов = сумма всех is_active
  *
  * @param {object} query -
  *      @param {int} fk_site                - ид ресурса
@@ -210,10 +212,11 @@ model.getMainpagePublic = async (query) => {
 
         let content_data = await new Promise((resolve, reject) => {
             mysql
-                .getSqlQuery("SELECT " + add_select +
+                .getSqlQuery("SELECT " + add_select + ", IFNULL(SUM(`is_active`), 0) AS count_comments " +
                     " FROM `" + TABLE_NAME_CONTENT + "` " +
                     " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
-                    " WHERE `pk_content` IN (:ids_content);", {
+                    " LEFT JOIN `" + TABLE_NAME_CONTENT_COMMENTS + "` ON `fk_content` = `pk_content` " +
+                    " WHERE `pk_content` IN (:ids_content) GROUP BY `pk_content`;", {
                     fk_site: query.fk_site,
                     ids_content
                 }).then(rows => {

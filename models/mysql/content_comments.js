@@ -107,4 +107,33 @@ model.commentsByContent = async (fk_content) => {
     });
 };
 
+/**
+ * найти кол-во комментов по ид контента
+ *
+ * @param {array} pk_arr - массив ид контента
+ */
+model.countCommentsByContentIn = async (pk_arr) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `fk_content`, COUNT(`pk_comment`) AS count_comments " +
+                " FROM `" + TABLE_NAME + "` " +
+                " WHERE `fk_content` IN (:pk_arr) AND `is_active` = 1 GROUP BY `fk_content`;", {
+                pk_arr
+            })
+            .then(rows => {
+                let ret = {};
+
+                for(let i = 0; i < rows.length; i ++) {
+                    ret[rows[i].fk_content] = rows[i].count_comments;
+                }
+
+                resolve(ret);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
 module.exports = model;

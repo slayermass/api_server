@@ -16,6 +16,7 @@ router.get('/content', async (req, res, next) => {
     query.limit = parseInt(query.limit, 10) || 20;
     query.fk_site = parseInt(query.fk_site, 10);
     query.withcount = parseInt(query.withcount, 10) || 0;
+    query.withcomments = parseInt(query.withcomments, 10) || 0;
     query.offset = parseInt(query.offset, 10) || 0;
     query.chosen = parseInt(query.chosen, 10) || 0;
     query.id_rubric = parseInt(query.id_rubric, 10) || 0;
@@ -49,7 +50,7 @@ router.get('/contentone', async (req, res, next) => {
     query.pk_content = parseInt(query.pk_content, 10) || 0;
     query.slug_content = query.slug_content || '';
     query.withimages = parseInt(query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
-    query.withcomments = parseInt(query.withcomments, 10); // (0,1) добавить ли комментарии
+    query.withcomments = parseInt(query.withcomments, 10) || 0; // (0,1) добавить ли комментарии
 
     if (
         (isNaN(query.fk_site) || query.fk_site < 1) ||
