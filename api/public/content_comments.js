@@ -15,11 +15,12 @@ router.post('/comment', async (req, res, next) => {
 
     query.fk_site = parseInt(query.fk_site, 10);
     query.fk_content = parseInt(query.fk_content, 10);
-    query.text = entities.encode(query.text);
+    query.text_comment = entities.encode(query.text_comment);
+    query.name_author_comment = entities.encode(query.name_author_comment);
 
     if(isNaN(query.fk_site) || query.fk_site < 1
         || isNaN(query.fk_content) || query.fk_content < 1
-        || query.text.length === 0) {
+        || query.text_comment.length === 0 || query.name_author_comment.length === 0) {
         next(BadRequestError());
     } else {
         try {

@@ -43,10 +43,11 @@ model.save = async (query) => {
 
     try {
         const saved = await mysql
-                .getSqlQuery("INSERT INTO  `" + TABLE_NAME + "` (`fk_content`, `text_comment`)" +
-                    " VALUES (:fk_content, :text_comment);", {
-                    text_comment: query.text,
-                    fk_content  : query.fk_content
+                .getSqlQuery("INSERT INTO  `" + TABLE_NAME + "` (`fk_content`, `text_comment`, `name_author_comment`)" +
+                    " VALUES (:fk_content, :text_comment, :name_author_comment);", {
+                    text_comment: query.text_comment,
+                    fk_content  : query.fk_content,
+                    name_author_comment: query.name_author_comment
                 });
 
         return {
@@ -92,7 +93,7 @@ model.checkContent = async (fk_site, fk_content) => {
 model.commentsByContent = async (fk_content) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_comment`, `text_comment`, `create_date` FROM `" + TABLE_NAME + "`" +
+            .getSqlQuery("SELECT `pk_comment`, `name_author_comment`, `text_comment`, `create_date` FROM `" + TABLE_NAME + "`" +
                 " WHERE `fk_content` = :fk_content AND `is_active` = 1" +
                 " ORDER BY `create_date` DESC;", {
                 fk_content
