@@ -565,7 +565,7 @@ model.incrViews = async (fk_site, pk_content, slug_content, req) => {
         // нет записей
         if(is.length === undefined) {
             await mysql
-                .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NULL)", {
+                .getSqlQuery("INSERT INTO `" + TABLE_NAME_VIEWS + "` VALUES (:pk_content, INET6_ATON(:ip), NOW())", {
                     pk_content: pk_content_found,
                     ip
                 });
