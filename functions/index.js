@@ -136,9 +136,11 @@ module.exports.getIdsFromShortcodes = (html) => {
  * @returns async {{upload_path: string, upload_destiny: string, full_path: string}}
  */
 module.exports.getSavePathAsync = async () => {
+    const month_d = new Date().getMonth() + 1;
+
     let date = new Date(),
         day = (date.getDate() < 10) ? `0${date.getDate()}` : date.getDate(),
-        month = (date.getMonth() < 10) ? `0${date.getMonth()}` : date.getMonth(),
+        month = (month_d < 10) ? `0${month_d}` : month_d,
         upload_path = `${path_to_save_global}${date.getFullYear()}`,
         upload_destiny = `${month}_${day}`,
         full_path = upload_path + '/' + upload_destiny;
