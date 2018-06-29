@@ -20,4 +20,6 @@ router.use(require('./material_rubrics'));
 
 router.use(require('./mainpage'));
 
+router.use(require('./banners'));
+
 module.exports = router;
