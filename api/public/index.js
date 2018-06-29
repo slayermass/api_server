@@ -12,4 +12,6 @@ router.use(require('./mainpage'));
 
 router.use(require('./content_comments'));
 
+router.use(require('./banners'));
+
 module.exports = router;

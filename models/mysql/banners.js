@@ -90,4 +90,30 @@ model.infoBanner = async (params) => {
     });
 };
 
+/** -------- PUBLIC ---------- */
+
+model.infoBannerPublic = async (params) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `script_banner`, `id_banner`, `pos_banner` FROM `" + TABLE_NAME + "` " +
+                " WHERE `fk_site` = :fk_site AND `date_since` >= CURDATE() AND `date_to` <= CURDATE();", {
+                fk_site     : params.fk_site
+            })
+            .then(rows => {
+                let arr = {};
+
+                for(let i = 0; i < rows.length; i ++) {
+                    arr[rows[i].pos_banner] = rows[i];
+                    delete rows[i].pos_banner;
+                }
+
+                resolve(arr);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
 module.exports = model;
