@@ -96,7 +96,7 @@ model.infoBannerPublic = async (params) => {
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `script_banner`, `id_banner`, `pos_banner` FROM `" + TABLE_NAME + "` " +
-                " WHERE `fk_site` = :fk_site AND `date_since` >= CURDATE() AND `date_to` <= CURDATE();", {
+                " WHERE `fk_site` = :fk_site AND `date_since` >= CURDATE() AND `date_to` >= CURDATE();", {
                 fk_site     : params.fk_site
             })
             .then(rows => {
