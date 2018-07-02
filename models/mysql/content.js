@@ -565,8 +565,6 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
 model.incrViews = async (fk_site, pk_content, slug_content, ip) => {
     //const ip = requestIp.getClientIp(req);
 
-    console.log(`ip: ${ip}`);
-
     try {
         let pk_content_found = await model.findPkBySlug(fk_site, pk_content, slug_content);
 
@@ -939,7 +937,7 @@ model.findOnePublic = async (params) => {
     try {
         let [content_data, content_tags] = await Promise.all([
             await mysql
-                .getSqlQuery("SELECT `pk_content`, `title_content`, `publish_date`, `headimgsrc_content`," +
+                .getSqlQuery("SELECT `pk_content`, `slug_content`, `title_content`, `publish_date`, `headimgsrc_content`," +
                     " `intro_content`, `fk_user_created`, `text_content`, `name_material_rubric`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
@@ -990,11 +988,12 @@ model.findOnePublic = async (params) => {
                     farr.push(
                         model
                             .findOnePublic({
-                                fk_site: params.fk_site,
-                                pk_content: widget_lc_ids[i],
+                                fk_site     : params.fk_site,
+                                pk_content  : widget_lc_ids[i],
                                 slug_content: params.slug_content,
-                                withimages: 0,
-                                wlc: true // быстрое решение рекурсии
+                                withimages  : 0,
+                                withcomments: 1, // нужно только кол-во комментариев
+                                wlc         : true // быстрое решение рекурсии
                             })
                     );
                 }
@@ -1005,6 +1004,9 @@ model.findOnePublic = async (params) => {
 
                 for (let i = 0; i < results.length; i++) {
                     result_lc[results[i].data.pk_content] = results[i].data;
+                    // дальше пошло плохо
+                    result_lc[results[i].data.pk_content].comments = results[i].comments;
+                    result_lc[results[i].data.pk_content].author = results[i].author;
                 }
 
                 data.linked_content = result_lc;
