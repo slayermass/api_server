@@ -838,10 +838,6 @@ model.findPublic = async (params) => {
                 for (let i = 0; i < results.content_data.length; i++) {
                     results.content_data[i].count_comments = count_comments[results.content_data[i].pk_content] || 0;
                 }
-            } else {
-                for (let i = 0; i < results.content_data.length; i++) {
-                    results.content_data[i].count_comments = 0;
-                }
             }
             // end найти кол-во комментариев отдельно
 
@@ -883,12 +879,15 @@ model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
                 // если нет комментов, то отдавать 0
                 for(let i = 0; i < rows.length; i ++) {
                     pk_contents.push(rows[i].pk_content);
+                    rows[i].count_comments = 0;
                 }
 
-                let count_comments = await contentCommentsModel.countCommentsByContentIn(pk_contents);
+                if(pk_contents.length) {
+                    let count_comments = await contentCommentsModel.countCommentsByContentIn(pk_contents);
 
-                for(let i = 0; i < rows.length; i ++) {
-                    rows[i].count_comments = count_comments[rows[i].pk_content] || 0;
+                    for (let i = 0; i < rows.length; i++) {
+                        rows[i].count_comments = count_comments[rows[i].pk_content] || 0;
+                    }
                 }
                 // end найти кол-во комментариев отдельно
 

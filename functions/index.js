@@ -17,6 +17,7 @@ const fs = require('fs'),
  * @param {String} err - описание ошибки
  */
 module.exports.error = (err) => {
+    if(err.status === 404) return;
     logger.error(err);
     console.log(err);
 };
