@@ -43,14 +43,14 @@ router.get('/content', async (req, res, next) => {
  * @see contentModel.findOne
  */
 router.get('/contentone', async (req, res, next) => {
-    let query = req.query;
+    let {query} = req;
 
     // validate
-    query.fk_site = parseInt(query.fk_site, 10);
-    query.pk_content = parseInt(query.pk_content, 10) || 0;
-    query.slug_content = query.slug_content || '';
-    query.withimages = parseInt(query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
-    query.withcomments = parseInt(query.withcomments, 10) || 0; // (0,1) добавить ли комментарии
+    query.fk_site       = parseInt(query.fk_site, 10);
+    query.pk_content    = parseInt(query.pk_content, 10) || 0;
+    query.slug_content  = query.slug_content || '';
+    query.withimages    = parseInt(query.withimages, 10) || 0; // (0,1) найти ид файлов и выдать ссылки на них вместе c результатом
+    query.withcomments  = parseInt(query.withcomments, 10) || 0; // (0,1) добавить ли комментарии
 
     if (
         (isNaN(query.fk_site) || query.fk_site < 1) ||
@@ -64,7 +64,7 @@ router.get('/contentone', async (req, res, next) => {
             res.send(data);
 
             // увеличить просмотр
-            model.incrViews(query.fk_site, query.pk_content, query.slug_content, req);
+            model.incrViews(query.fk_site, query.pk_content, query.slug_content, query.ip);
         } catch (err) {
             next(err);
         }

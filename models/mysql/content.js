@@ -448,7 +448,7 @@ model.save = async (cobj, fk_site) => {
 
     if (cobj.status_content === 3) {
         publish_date = cobj.later_publish_time;
-    } else {
+    } else { // это не нормально, но быстрое решение
         const date = new Date();
         const month = (date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
         const day = (date.getDate() > 9) ? date.getDate() : '0'+date.getDate();
@@ -560,10 +560,12 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * @param {int} fk_site         - ид сайта
  * @param {int} pk_content      - ид контента или
  * @param {String} slug_content - slug content
- * @param {Object} req          - express request object
+ * @param {Object} ip           - ip адрес с фронтенда
  */
-model.incrViews = async (fk_site, pk_content, slug_content, req) => {
-    const ip = requestIp.getClientIp(req);
+model.incrViews = async (fk_site, pk_content, slug_content, ip) => {
+    //const ip = requestIp.getClientIp(req);
+
+    console.log(`ip: ${ip}`);
 
     try {
         let pk_content_found = await model.findPkBySlug(fk_site, pk_content, slug_content);
