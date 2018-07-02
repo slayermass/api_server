@@ -450,7 +450,8 @@ model.save = async (cobj, fk_site) => {
         publish_date = cobj.later_publish_time;
     } else { // это не нормально, но быстрое решение
         const date = new Date();
-        const month = (date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
+        let  month = date.getMonth() + 1;
+            month(date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
         const day = (date.getDate() > 9) ? date.getDate() : '0'+date.getDate();
         const hours = (date.getHours() > 9) ? date.getHours() : '0'+date.getHours();
         const minutes = (date.getMinutes() > 9) ? date.getMinutes() : '0'+date.getMinutes();
