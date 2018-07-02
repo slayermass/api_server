@@ -443,14 +443,22 @@ model.save = async (cobj, fk_site) => {
     }
 
 
-    let publish_date = '';
-
     // publish_date должен быть явно указан
+    let publish_date;
+
     if (cobj.status_content === 3) {
         publish_date = cobj.later_publish_time;
-    } /**else {
-        publish_date = cobj.later_publish_time;
-    }*/
+    } else {
+        const date = new Date();
+        const month = (date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
+        const day = (date.getDate() > 9) ? date.getDate() : '0'+date.getDate();
+        const hours = (date.getHours() > 9) ? date.getHours() : '0'+date.getHours();
+        const minutes = (date.getMinutes() > 9) ? date.getMinutes() : '0'+date.getMinutes();
+        const seconds = (date.getSeconds() > 9) ? date.getSeconds() : '0'+date.getSeconds();
+
+        publish_date = date.getFullYear() + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds;
+    }
+    // end publish_date должен быть явно указан
 
 
     if (cobj.is_chosen) {
