@@ -100,20 +100,21 @@ router.post('/content', (req, res, next) => {
         // validate
         body.fk_site = parseInt(body.fk_site, 10);
         content = {
-            title_content: body.content.title,
-            seo_title_content: body.content.seo_title_content,
-            text_content: body.content.text,
-            intro_content: body.content.intro,
-            tags: body.content.tags,
-            status_content: parseInt(body.content.status, 10) || 2,
-            fk_user_created: parseInt(body.content.fk_user_created, 10),
-            headimgsrc_content: body.content.head_img_src,
-            pk_content: parseInt(body.content.pk_content, 10),
-            later_publish_time: body.content.later_publish_time,
-            type_material: parseInt(body.content.type_material, 10),
+            exclude_rss_yandex  : parseInt(body.content.exclude_rss_yandex, 10) || 0,
+            title_content       : body.content.title,
+            seo_title_content   : body.content.seo_title_content,
+            text_content        : body.content.text,
+            intro_content       : body.content.intro,
+            tags                : body.content.tags,
+            status_content      : parseInt(body.content.status, 10) || 2,
+            fk_user_created     : parseInt(body.content.fk_user_created, 10),
+            headimgsrc_content  : body.content.head_img_src,
+            pk_content          : parseInt(body.content.pk_content, 10),
+            later_publish_time  : body.content.later_publish_time,
+            type_material       : parseInt(body.content.type_material, 10),
             headimglabel_content: body.content.headimglabel_content,
-            is_chosen: parseInt(body.content.is_chosen, 10) || 0,
-            fk_material_rubric: parseInt(body.content.rubric, 10) || 1
+            is_chosen           : parseInt(body.content.is_chosen, 10) || 0,
+            fk_material_rubric  : parseInt(body.content.rubric, 10) || 1
         };
     } catch (e) {
         next(BadRequestError());

@@ -298,6 +298,7 @@ model.find = (params) => {
  *      @param {timestamp} later_publish_time - дата/время отложенной публикации
  *      @param {int}    is_chosen           - избранная ли новость
  *      @param {int}    fk_material_rubric  - рубрика контента
+ *      @param {int}    exclude_rss_yandex  - исключить из яндекс rss?
  * @param {int} fk_site                     - ид сайта
  */
 model.update = async (cobj, fk_site) => {
@@ -337,25 +338,27 @@ model.update = async (cobj, fk_site) => {
             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `title_content` = :title_content," +
                 " `seo_title_content` = :seo_title_content, `headimgsrc_content` = :headimgsrc_content," +
                 " `text_content` = :text_content, `status_content` = :status_content, " +
-                "`fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
-                "`fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content, `fk_material_rubric` = :fk_material_rubric " +
+                " `fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
+                " `fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content, " +
+                " `fk_material_rubric` = :fk_material_rubric, `exclude_rss_yandex` = :exclude_rss_yandex " +
                 add_sql +
                 "WHERE `pk_content` = :pk_content"
                 , {
-                    title_content: cobj.title_content,
-                    intro_content: cobj.intro_content,
-                    text_content: cobj.text_content,
-                    headimgsrc_content: cobj.headimgsrc_content,
-                    status_content: cobj.status_content,
-                    fk_user_updated: cobj.fk_user_created,
-                    update_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-                    pk_content: cobj.pk_content,
+                    title_content       : cobj.title_content,
+                    intro_content       : cobj.intro_content,
+                    text_content        : cobj.text_content,
+                    headimgsrc_content  : cobj.headimgsrc_content,
+                    status_content      : cobj.status_content,
+                    fk_user_updated     : cobj.fk_user_created,
+                    update_date         : moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
+                    pk_content          : cobj.pk_content,
                     publish_date,
-                    fk_material_type: cobj.type_material,
+                    fk_material_type    : cobj.type_material,
                     headimglabel_content: cobj.headimglabel_content,
-                    seo_title_content: cobj.seo_title_content,
-                    is_chosen: cobj.is_chosen,
-                    fk_material_rubric: cobj.fk_material_rubric
+                    seo_title_content   : cobj.seo_title_content,
+                    is_chosen           : cobj.is_chosen,
+                    fk_material_rubric  : cobj.fk_material_rubric,
+                    exclude_rss_yandex  : cobj.exclude_rss_yandex
                 })
             .then(row => {
                 resolve({
@@ -426,6 +429,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {int}    type_material          - тип материала
  *      @param {int}    is_chosen              - избранная ли новость
  *      @param {int}    fk_material_rubric  - рубрика контента
+ *      @param {int}    exclude_rss_yandex  - исключить из яндекс rss?
  * @param {int} fk_site                     - ид сайта
  */
 model.save = async (cobj, fk_site) => {
@@ -450,8 +454,8 @@ model.save = async (cobj, fk_site) => {
         publish_date = cobj.later_publish_time;
     } else { // это не нормально, но быстрое решение
         const date = new Date();
-        let  month = date.getMonth() + 1;
-            month(date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
+        let month = date.getMonth() + 1;
+            month = (date.getMonth() > 9) ? date.getMonth() : '0'+date.getMonth();
         const day = (date.getDate() > 9) ? date.getDate() : '0'+date.getDate();
         const hours = (date.getHours() > 9) ? date.getHours() : '0'+date.getHours();
         const minutes = (date.getMinutes() > 9) ? date.getMinutes() : '0'+date.getMinutes();
@@ -475,24 +479,25 @@ model.save = async (cobj, fk_site) => {
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
                         " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`," +
-                        " `headimglabel_content`, `is_chosen`, `fk_material_rubric`)" +
+                        " `headimglabel_content`, `is_chosen`, `fk_material_rubric`, `exclude_rss_yandex`)" +
                         " VALUES (:title_content, :seo_title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
                         " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type," +
-                        " :headimglabel_content, :is_chosen, :fk_material_rubric);", {
-                        title_content: cobj.title_content,
+                        " :headimglabel_content, :is_chosen, :fk_material_rubric, :exclude_rss_yandex);", {
+                        title_content       : cobj.title_content,
                         slug,
-                        text_content: cobj.text_content,
-                        intro_content: cobj.intro_content,
-                        headimgsrc_content: cobj.headimgsrc_content,
+                        text_content        : cobj.text_content,
+                        intro_content       : cobj.intro_content,
+                        headimgsrc_content  : cobj.headimgsrc_content,
                         fk_site,
-                        status_content: cobj.status_content,
-                        fk_user_created: cobj.fk_user_created,
+                        status_content      : cobj.status_content,
+                        fk_user_created     : cobj.fk_user_created,
                         publish_date,
-                        fk_material_type: cobj.type_material,
+                        fk_material_type    : cobj.type_material,
                         headimglabel_content: cobj.headimglabel_content,
-                        seo_title_content: cobj.seo_title_content,
-                        is_chosen: cobj.is_chosen,
-                        fk_material_rubric: cobj.fk_material_rubric
+                        seo_title_content   : cobj.seo_title_content,
+                        is_chosen           : cobj.is_chosen,
+                        fk_material_rubric  : cobj.fk_material_rubric,
+                        exclude_rss_yandex  : cobj.exclude_rss_yandex
                     })
                     .then(row => {
                         resolve({
