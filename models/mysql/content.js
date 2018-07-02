@@ -442,11 +442,16 @@ model.save = async (cobj, fk_site) => {
         cobj.intro_content = null;
     }
 
-    let publish_date = null;
 
+    let publish_date = '';
+
+    // publish_date должен быть явно указан
     if (cobj.status_content === 3) {
         publish_date = cobj.later_publish_time;
-    }
+    } /**else {
+        publish_date = cobj.later_publish_time;
+    }*/
+
 
     if (cobj.is_chosen) {
         await model.unsetChosen(fk_site);
