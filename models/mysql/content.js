@@ -547,7 +547,9 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
                     uniqnum = ++num;
                 }
 
-                slug = `${slug}-${uniqnum}`;
+                if(uniqnum > 0) { // а то новым 0 добавлялся
+                    slug = `${slug}-${uniqnum}`;
+                }
 
                 resolve(slug);
             })
