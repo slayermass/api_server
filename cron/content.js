@@ -27,9 +27,11 @@ checkPublishUpdate = timingDecorator(checkPublishUpdate);
 checkPublishUpdate()
     .then(count => {
         console.log('опубликовано: ' + count);
+        process.exit(22);
     })
     .catch(err => {
         errorlog(err);
+        process.exit(22);
     });
 
-console.log('cron started');
+console.log('cron just started');
