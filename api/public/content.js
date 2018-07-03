@@ -98,7 +98,26 @@ router.get('/contentonly', async (req, res, next) => {
     }
 });
 
+/**
+ * получение данных для rss (яндекс)
+ */
+router.get('/contentrss', async (req, res, next) => {
+    const fk_site = parseInt(req.query.fk_site, 10);
+    let limit = parseInt(req.query.limit, 10) || 20;
+    limit = (limit > 20) ? 20 : limit;
 
+    if (isNaN(fk_site) || fk_site < 1) {
+        next(BadRequestError());
+    } else {
+        try {
+            let data = await model.rssPublic(fk_site, limit);
+
+            res.send({data});
+        } catch (err) {
+            next(err);
+        }
+    }
+});
 
 
 

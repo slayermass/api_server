@@ -1101,4 +1101,30 @@ model.findOnePublic = async (params) => {
     return data;
 };
 
+/**
+ * получение данных для rss
+ *
+ * @param {int} fk_site - ид сайта - required
+ * @param {int} limit   - ограничение выборки
+ */
+model.rssPublic = async (fk_site, limit) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_content`, `slug_content`, `intro_content`, `text_content`, `publish_date`, `title_content`" +
+                " FROM `" + TABLE_NAME + "` " +
+                " WHERE `exclude_rss_yandex` = 0 AND `fk_site` = :fk_site AND `status_content` = 1" +
+                " ORDER BY `publish_date` DESC LIMIT :limit;", {
+                fk_site,
+                limit
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    })
+};
+
 module.exports = model;
