@@ -1,6 +1,7 @@
 const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
-    model = require('../../models/mysql/menu_items');
+    model = require('../../models/mysql/menu_items'),
+    empty = require('is-empty');
 
 /**
  * find menu items by pk_menu or label_menu
@@ -22,10 +23,14 @@ router.get('/menu_items', (req, res, next) => {
         model
             .findAll(fk_site, pk_menu, label_menu)
             .then(data => {
-                res.send({
-                    label_menu: data[0].label_menu, // не очень умно
-                    menu_items: data
-                });
+                if(empty(data)) {
+                    res.send({}); // пустой ответ
+                } else {
+                    res.send({
+                        label_menu: data[0].label_menu, // не очень умно
+                        menu_items: data
+                    });
+                }
             })
             .catch(err => {
                 next(err);
