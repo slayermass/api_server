@@ -1,4 +1,5 @@
 let checkPublishUpdate = require('../models/mysql/content').checkPublishUpdate;
+let errorlog = require('../functions').error;
 
 /**
  * декоратор для подсчета времени выполнения
@@ -26,7 +27,8 @@ checkPublishUpdate = timingDecorator(checkPublishUpdate);
 setInterval(function () {
     checkPublishUpdate()
         .then(count => {
-            //console.log(count);
+            console.log('опубликовано: ' + count);
+            errorlog('опубликовано: ' + count);
         })
         .catch(() => {
 
