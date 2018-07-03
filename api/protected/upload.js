@@ -253,7 +253,7 @@ router.delete('/upload', (req, res, next) => {
 router.get('/upload/list', (req, res, next) => {
     const
         qlimit = parseInt(req.query.limit, 10),
-        limit = (qlimit && qlimit < 50) ? qlimit : 50,
+        limit = (qlimit && qlimit < 20) ? qlimit : 20, // слишком много сразу - виснет браузер
         fk_site = parseInt(req.query.fk_site, 10),
         folder = req.query.folder || null;
 
