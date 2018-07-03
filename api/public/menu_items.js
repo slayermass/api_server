@@ -23,14 +23,7 @@ router.get('/menu_items', (req, res, next) => {
         model
             .findAll(fk_site, pk_menu, label_menu)
             .then(data => {
-                if(empty(data)) {
-                    res.send({}); // пустой ответ
-                } else {
-                    res.send({
-                        label_menu: data[0].label_menu, // не очень умно
-                        menu_items: data
-                    });
-                }
+                res.send(data);
             })
             .catch(err => {
                 next(err);

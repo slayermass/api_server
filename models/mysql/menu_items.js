@@ -14,6 +14,12 @@ const
     empty = require('is-empty'),
     MENU_TABLE_NAME = require('./menu').getTableName();
 
+const redis = require("redis");
+const client = redis.createClient();
+client.on("error", function (err) {
+    console.log("Error " + err);
+});
+
 mysql.formatBind();
 
 /**
@@ -23,7 +29,42 @@ mysql.formatBind();
  * @param {int} pk_menu         - pk parent menu
  * @param {String} label_menu   - label parent menu(should be unique)
  */
-model.findAll = (fk_site, pk_menu, label_menu) => {
+model.findAll = async (fk_site, pk_menu, label_menu) => {
+    //console.log(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`);
+
+    try {
+        const cachedata = await new Promise((resolve, reject) => {
+            client.hget(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`, (err, result) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(JSON.parse(result));
+                }
+            });
+        });
+
+        // очистка кэша
+        /**client.flushdb( function (err, succeeded) {
+            console.log(succeeded); // will be true if successfull
+        });*/
+
+        if(cachedata === null) {
+
+        } else {
+            // если есть признак кэширования и не пустой объект - отдать
+            if (cachedata.cached && !empty(cachedata)) {
+                console.log(`меню ${label_menu} из кеша`);
+                delete cachedata.cached; // удалить признак кэширования
+                return cachedata;
+            }
+        }
+    } catch(err) {
+        // ничего, идти дальше
+    }
+
+    console.log(`меню ${label_menu} пойду в базу`);
+
+
     let condition = '';
 
     if (!empty(label_menu)) { // search by label
@@ -46,7 +87,20 @@ model.findAll = (fk_site, pk_menu, label_menu) => {
                 label_menu: entities.encode(label_menu)
             })
             .then(rows => {
-                resolve(rows);
+                if(empty(rows)) {
+                    resolve({});
+                } else {
+                    rows = {
+                        label_menu: rows[0].label_menu, // не очень умно
+                        menu_items: rows
+                    };
+
+                    resolve(rows);
+                }
+
+                rows.cached = true;
+
+                client.hset(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`, JSON.stringify(rows));
             })
             .catch(err => {
                 if (err === EMPTY_SQL) {
