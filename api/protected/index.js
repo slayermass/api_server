@@ -22,4 +22,6 @@ router.use(require('./mainpage'));
 
 router.use(require('./banners'));
 
+router.use(require('./cache'));
+
 module.exports = router;

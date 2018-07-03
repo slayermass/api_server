@@ -14,6 +14,8 @@ const
     empty = require('is-empty'),
     MENU_TABLE_NAME = require('./menu').getTableName();
 
+const cacheModel = require('../../functions/cache');
+
 const redis = require("redis");
 const client = redis.createClient();
 client.on("error", function (err) {
@@ -30,39 +32,11 @@ mysql.formatBind();
  * @param {String} label_menu   - label parent menu(should be unique)
  */
 model.findAll = async (fk_site, pk_menu, label_menu) => {
-    //console.log(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`);
+    let cachedata = await cacheModel.hget(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`);
 
-    try {
-        const cachedata = await new Promise((resolve, reject) => {
-            client.hget(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`, (err, result) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(JSON.parse(result));
-                }
-            });
-        });
-
-        // очистка кэша
-        /**client.flushdb( function (err, succeeded) {
-            console.log(succeeded); // will be true if successfull
-        });*/
-
-        if(cachedata === null) {
-
-        } else {
-            // если есть признак кэширования и не пустой объект - отдать
-            if (cachedata.cached && !empty(cachedata)) {
-                console.log(`меню ${label_menu} из кеша`);
-                delete cachedata.cached; // удалить признак кэширования
-                return cachedata;
-            }
-        }
-    } catch(err) {
-        // ничего, идти дальше
+    if(cachedata) {
+        return cachedata;
     }
-
-    console.log(`меню ${label_menu} пойду в базу`);
 
 
     let condition = '';
@@ -98,9 +72,7 @@ model.findAll = async (fk_site, pk_menu, label_menu) => {
                     resolve(rows);
                 }
 
-                rows.cached = true;
-
-                client.hset(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`, JSON.stringify(rows));
+                cacheModel.hset(`label_menu_${label_menu}_${fk_site}`, `main_${fk_site}`, rows);
             })
             .catch(err => {
                 if (err === EMPTY_SQL) {
