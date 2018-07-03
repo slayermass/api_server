@@ -24,15 +24,12 @@ checkPublishUpdate = timingDecorator(checkPublishUpdate);
  * запуск функции проверки/обновления контента
  * раз в 1 минуту
  */
-setInterval(function () {
-    checkPublishUpdate()
-        .then(count => {
-            console.log('опубликовано: ' + count);
-            errorlog('опубликовано: ' + count);
-        })
-        .catch(() => {
-
-        });
-}, 1000 * 60);
+checkPublishUpdate()
+    .then(count => {
+        console.log('опубликовано: ' + count);
+    })
+    .catch(err => {
+        errorlog(err);
+    });
 
 console.log('cron started');
