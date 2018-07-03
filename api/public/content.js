@@ -2,6 +2,7 @@ const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
     model = require('../../models/mysql/content'),
     empty = require('is-empty'),
+    PUBLIC_FILES_URL = require('../../functions').PUBLIC_FILES_URL,
     errorlog = require('../../functions').error;
 
 /**
@@ -222,7 +223,7 @@ router.post('/contenttestimage', async (req, res, next) => {
                 .then(data => {
                     mysql
                         .getSqlQuery("UPDATE `content` SET `headimgsrc_content` = :img WHERE `id_news_old` = :id_news",{
-                            img: `http://109.195.33.205/papi/upload/f/${data[0].name_file}`,
+                            img: `${PUBLIC_FILES_URL}/papi/upload/f/${data[0].name_file}`,
                             id_news
                         })
                         .then(() => {
@@ -511,7 +512,7 @@ router.post('/contenttestcontent', async (req, res, next) => {
 
             for(let i = 0; i < imgs.length; i++) {
                 for(let j = 0; j < imgs[i].length; j++) {
-                    text_content = text_content.replace(imgs[i][j].link_orig, `http://109.195.33.205/papi/upload/f/${imgs[i][j].name_file}`);
+                    text_content = text_content.replace(imgs[i][j].link_orig, `${PUBLIC_FILES_URL}/papi/upload/f/${imgs[i][j].name_file}`);
                 }
             }
 

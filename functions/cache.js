@@ -41,7 +41,7 @@ module.exports.hget = async (key, field) => {
         } else {
             // если есть признак кэширования и не пустой объект - отдать
             if (cachedata.cached && !empty(cachedata)) {
-                console.log(`меню ${key} из кеша`);
+                //console.log(`меню ${key} из кеша`);
                 delete cachedata.cached; // удалить признак кэширования
                 return cachedata;
             }
@@ -50,6 +50,6 @@ module.exports.hget = async (key, field) => {
         // ничего, идти дальше
     }
 
-    console.log(`меню ${key} пойду в базу`);
+    //console.log(`меню ${key} пойду в базу`);
     return false;
 };

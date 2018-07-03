@@ -12,7 +12,7 @@ const
     async = require('async'),
     fs = require('fs'),
     empty = require('is-empty'),
-    PUBLIC_API_URL = require('../../config').PUBLIC_API_URL,
+    PUBLIC_FILES_URL = require('../../config').PUBLIC_FILES_URL,
     EMPTY_SQL = require('../../config/mysql_config').EMPTY_SQL,
     getSavePathAsync = require('../../functions').getSavePathAsync,
     getImageTypeFromUrl = require('../../functions').getImageTypeFromUrl,
@@ -371,7 +371,7 @@ upload_files.findApi = (fk_site, limit, pk_files, folder = null) => {
             .then(rows => {
                 //добавить расширение файла
                 for(let i = 0; i < rows.length; i++) {
-                    rows[i].url_file = `${PUBLIC_API_URL}/upload/f/${rows[i].name_file}`;
+                    rows[i].url_file = `${PUBLIC_FILES_URL}/upload/f/${rows[i].name_file}`;
                     rows[i].ext = mime.extension(mime.contentType(rows[i].name_file));
                 }
                 resolve(rows);
