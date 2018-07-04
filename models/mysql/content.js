@@ -872,26 +872,24 @@ model.findPublic = async (params) => {
 };
 
 /**
- * проверить есть ли новости после данной(pk_content) и отдать (limit) штук
- *
- * TODO сделать по slug_content - найти ид. pk_content не должен мелькать
+ * проверить есть ли новости после данной по времени не pk_content и отдать (limit) штук
  *
  * @param {int} fk_site    - ид сайта
- * @param {int} pk_content - ид проверяемой новости
+ * @param {int} publish_date - время публикации проверяемой новости
  * @param {int} limit      - ограничение выборки
  * @param {boolean} findnew - искать новые, последние(true) или старые(false) от данного ид
  */
-model.getPublicContentOnly = (fk_site, pk_content, limit, findnew = true) => {
+model.getPublicContentOnly = (fk_site, publish_date, limit, findnew = true) => {
     let sql = (findnew) ? '>' : '<';
 
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `pk_content`, `slug_content`, `headimgsrc_content`, `publish_date`, `title_content`" +
                 " FROM `" + TABLE_NAME + "` " +
-                " WHERE `pk_content` " + sql + " :pk_content AND `fk_site` = :fk_site AND `status_content` = 1" +
+                " WHERE `publish_date` " + sql + " :publish_date AND `fk_site` = :fk_site AND `status_content` = 1" +
                 " ORDER BY `publish_date` DESC LIMIT :limit;", {
                 fk_site,
-                pk_content,
+                publish_date,
                 limit
             })
             .then(async rows => {

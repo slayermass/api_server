@@ -80,17 +80,17 @@ router.get('/contentone', async (req, res, next) => {
 router.get('/contentonly', async (req, res, next) => {
     // validate
     const fk_site = parseInt(req.query.fk_site, 10);
-    const pk_content = parseInt(req.query.pk_content, 10);
+    const publish_date = req.query.publish_date;
     let limit = parseInt(req.query.limit, 10) || 20;
     const findnew = (Number(req.query.findnew) === 1);
 
     limit = (limit > 20) ? 20 : limit;
 
-    if (isNaN(fk_site) || isNaN(pk_content) || pk_content < 1 || fk_site < 1) {
+    if (isNaN(fk_site) || publish_date.length < 19 || fk_site < 1) {
         next(BadRequestError());
     } else {
         try {
-            let data = await model.getPublicContentOnly(fk_site, pk_content, limit, findnew);
+            let data = await model.getPublicContentOnly(fk_site, publish_date, limit, findnew);
 
             res.send(data);
         } catch (err) {
