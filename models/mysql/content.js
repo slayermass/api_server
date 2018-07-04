@@ -571,6 +571,8 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
  * @param {Object} ip           - ip адрес с фронтенда
  */
 model.incrViews = async (fk_site, pk_content, slug_content, ip) => {
+    if(empty(ip)) return false;
+
     //const ip = requestIp.getClientIp(req);
 
     try {

@@ -1,20 +1,11 @@
 const router = require('express').Router();
-
-const redis = require("redis");
-const client = redis.createClient();
-
-client.on("error", function (err) {
-    console.log("Error " + err);
-});
-
+const cacheModel = require('../../functions/cache');
 
 /**
  * очистка кэша полностью
  */
 router.delete('/cache', async (req, res, next) => {
-    client.flushdb( function (err, succeeded) {
-        console.log(succeeded);
-    });
+    cacheModel.flushdb();
 
     res.send('cache cleared'); // ?
 });

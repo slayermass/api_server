@@ -12,7 +12,7 @@ const model = require('../../models/mysql/mainpage');
 router.get('/mainpage', async (req, res, next) => {
     let {query} = req;
 
-    query.current_id_index_page = parseInt(query.id_index_page, 10); // текущий ид главной страницы
+    query.current_id_index_page = parseInt(query.id_index_page, 10) || 0; // текущий ид главной страницы
     query.fk_site = parseInt(query.fk_site, 10);
     query.select = (!empty(query.select)) ? query.select.split(',') : []; // только определенные поля на выбор
 

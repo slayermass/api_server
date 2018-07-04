@@ -41,7 +41,7 @@ module.exports.hget = async (key, field) => {
         } else {
             // если есть признак кэширования и не пустой объект - отдать
             if (cachedata.cached && !empty(cachedata)) {
-                //console.log(`меню ${key} из кеша`);
+                //console.log(`key: '${key}', field: '${field}' из кеша`);
                 delete cachedata.cached; // удалить признак кэширования
                 return cachedata;
             }
@@ -50,6 +50,16 @@ module.exports.hget = async (key, field) => {
         // ничего, идти дальше
     }
 
-    //console.log(`меню ${key} пойду в базу`);
+    //console.log(`key: '${key}', field: '${field}' нет в кэше`);
     return false;
+};
+
+/**
+ * очистка всех баз, всего кэша
+ * flushdb
+ */
+module.exports.flushdb = () => {
+    client.flushdb( function (err, succeeded) {
+        console.log(succeeded);
+    });
 };
