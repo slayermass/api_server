@@ -944,7 +944,7 @@ model.findOnePublic = async (params) => {
         let [content_data, content_tags] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `slug_content`, `title_content`, `publish_date`, `headimgsrc_content`," +
-                    " `intro_content`, `fk_user_created`, `text_content`, `name_material_rubric`, count(ip) AS views" +
+                    " `intro_content`, `fk_user_created`, `fk_material_type`, `text_content`, `name_material_rubric`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                     " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric`" +
@@ -1064,27 +1064,31 @@ model.findOnePublic = async (params) => {
 
     // найти автора контента
     try {
-        let user_data = await mysql
-            .getSqlQuery("SELECT `lastname_content_author`, `name_content_author`, `secondname_content_author`" +
-                " FROM `content_authors` WHERE `pk_content_author` = :fk_user_created", {
-                fk_site         : params.fk_site,
-                fk_user_created : data.data.fk_user_created
-            });
+        data.author = {
+            lastname    : 'Неизвестно',
+            name        : '',
+            secondname  : ''
+        };
 
-        if (user_data.length) {
-            data.author = {
-                lastname    : user_data[0].lastname_content_author,
-                name        : user_data[0].name_content_author,
-                secondname  : user_data[0].secondname_content_author
-            };
-        } else { // некий пустой объект
-            data.author = {
-                lastname    : 'Неизвестно',
-                name        : '',
-                secondname  : ''
-            };
+        // вывод автора только авторский материал
+        if(data.data.fk_material_type === 3) {
+            let user_data = await mysql
+                .getSqlQuery("SELECT `lastname_content_author`, `name_content_author`, `secondname_content_author`" +
+                    " FROM `content_authors` WHERE `pk_content_author` = :fk_user_created", {
+                    fk_site: params.fk_site,
+                    fk_user_created: data.data.fk_user_created
+                });
+
+            if (user_data.length) {
+                data.author = {
+                    lastname    : user_data[0].lastname_content_author,
+                    name        : user_data[0].name_content_author,
+                    secondname  : user_data[0].secondname_content_author
+                };
+            }
         }
 
+        delete data.data.fk_material_type;
     } catch (err) {
         errorlog(err);
 
