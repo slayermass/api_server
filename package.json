@@ -7,8 +7,8 @@
     "startdev": "nodemon -e '.js' app.js",
     "start": "pm2 start app.js -i max --name webserver",
     "stop": "pm2 delete webserver",
-    "startcron": "node cron/content.js",
-    "stopcron": "pm2 stop cron && pm2 delete cron",
+    "cron:content": "node cron/content.js",
+    "cron:cache": "node cron/cache.js",
     "restart": "pm2 stop webserver && pm2 delete webserver && npm run start",
     "test": "mocha tests/content --exit"
   },

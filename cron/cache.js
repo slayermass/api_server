@@ -4,4 +4,4 @@ cacheModel.flushdb();
 
 console.info('cache cleared'); // ?
 
-process.exit(22);
+process.exit(process.exitCode);
