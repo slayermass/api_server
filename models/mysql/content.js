@@ -1110,7 +1110,8 @@ model.findOnePublic = async (params) => {
 model.rssPublic = async (fk_site, limit) => {
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `pk_content`, `slug_content`, `intro_content`, `text_content`, `publish_date`, `title_content`" +
+            .getSqlQuery("SELECT `pk_content`, `slug_content`, `intro_content`, `text_content`, `publish_date`," +
+                    " `title_content`, `headimgsrc_content`" +
                 " FROM `" + TABLE_NAME + "` " +
                 " WHERE `exclude_rss_yandex` = 0 AND `fk_site` = :fk_site AND `status_content` = 1" +
                 " ORDER BY `publish_date` DESC LIMIT :limit;", {
