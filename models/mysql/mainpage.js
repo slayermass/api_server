@@ -8,12 +8,9 @@ const
     TABLE_NAME_CONTENT_COMMENTS = require('./content_comments').getTableName(),
     TABLE_NAME_CONTENT_MATERIAL_RUBRIC = require('./content_material_rubric').getTableName(),
     mysql               = require('../../db/mysql'),
-    Entities            = require('html-entities').XmlEntities,
-    entities            = new Entities(),
     errorlog            = require('../../functions').error,
     isArraysEqual       = require('../../functions').isArraysEqual,
-    cacheModel          = require('../../functions/cache'),
-    EMPTY_SQL           = require('../../config/mysql_config').EMPTY_SQL;
+    cacheModel          = require('../../functions/cache');
 
 mysql.formatBind();
 
@@ -182,7 +179,7 @@ model.getMainpageInfo = async (fk_site) => {
  * @returns {Array}     - краткие данные контента в строгом порядке сохранения
  */
 model.getMainpagePublic = async (query) => {
-    const use_cache = false;
+    //const use_cache = true;
 
     // собрать в обернутую строку
     const add_select = query.select.map(el => `\`${el}\``).join(',');
@@ -216,11 +213,12 @@ model.getMainpagePublic = async (query) => {
         const ids_content = JSON.parse(mainpage_data.data);
 
 
+        // заранее объявить
         let content_data;
         let content_comments_data;
 
         // кэш
-        if(use_cache) {
+        //if(use_cache) {
             const cache_select = query.select.map(el => el).join('-');
 
             let cachedata = await cacheModel.hget(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`);
@@ -257,7 +255,7 @@ model.getMainpagePublic = async (query) => {
                 mysql
                     .getSqlQuery("SELECT SUM(`is_active`) AS count_comments, fk_content" +
                         " FROM `" + TABLE_NAME_CONTENT_COMMENTS + "`" +
-                        " WHERE `fk_content` IN (:ids_content);", {
+                        " WHERE `fk_content` IN (:ids_content) GROUP BY fk_content;", {
                         fk_site: query.fk_site,
                         ids_content
                     })
@@ -270,7 +268,7 @@ model.getMainpagePublic = async (query) => {
                     });
             });
             // end кэш
-        } else {
+        /**} else {
             // все и сразу напрямую из базы
             content_data = await new Promise((resolve, reject) => {
                 mysql
@@ -290,7 +288,7 @@ model.getMainpagePublic = async (query) => {
                         reject(err);
                     });
             });
-        }
+        }*/
 
         // привести к удобному виду
         let arr = {};
@@ -298,13 +296,13 @@ model.getMainpagePublic = async (query) => {
         for(let i = 0; i < content_data.length; i++) {
             arr[content_data[i].pk_content] = content_data[i];
 
-            if(use_cache) {
+            //if(use_cache) {
                 arr[content_data[i].pk_content].count_comments = 0; // начальное значение комментариев
 
                 if (content_comments_data[i]) { // если есть - добавлять
                     arr[content_data[i].pk_content].count_comments = content_comments_data[i].count_comments;
                 }
-            }
+            //}
         }
         // end привести к удобному виду
 
