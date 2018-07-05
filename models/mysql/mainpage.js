@@ -179,7 +179,7 @@ model.getMainpageInfo = async (fk_site) => {
  * @returns {Array}     - краткие данные контента в строгом порядке сохранения
  */
 model.getMainpagePublic = async (query) => {
-    const use_cache = false;
+    //const use_cache = true;
 
     // собрать в обернутую строку
     const add_select = query.select.map(el => `\`${el}\``).join(',');
@@ -217,8 +217,10 @@ model.getMainpagePublic = async (query) => {
         let content_data;
         let content_comments_data;
 
+        // console.log(ids_content.map(el=>el).join(','));
+
         // кэш
-        if(use_cache) {
+        //if(use_cache) {
             const cache_select = query.select.map(el => el).join('-');
 
             let cachedata = await cacheModel.hget(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`);
@@ -267,8 +269,17 @@ model.getMainpagePublic = async (query) => {
                         reject(err);
                     });
             });
+
+            // опять же быстрое решение, соответствие {pk_content: кол-во комментов}
+            let temp = {};
+
+            for(let i = 0; i < content_comments_data.length; i++) {
+                temp[content_comments_data[i].fk_content] = content_comments_data[i].count_comments;
+            }
+
+            content_comments_data = temp;
             // end кэш
-        } else {
+        /**} else {
             // все и сразу напрямую из базы
             content_data = await new Promise((resolve, reject) => {
                 mysql
@@ -288,7 +299,7 @@ model.getMainpagePublic = async (query) => {
                         reject(err);
                     });
             });
-        }
+        }*/
 
         // привести к удобному виду
         let arr = {};
@@ -296,13 +307,13 @@ model.getMainpagePublic = async (query) => {
         for(let i = 0; i < content_data.length; i++) {
             arr[content_data[i].pk_content] = content_data[i];
 
-            if(use_cache) {
-                arr[content_data[i].pk_content].count_comments = 0; // начальное значение комментариев
-
-                if (content_comments_data[i]) { // если есть - добавлять
-                    arr[content_data[i].pk_content].count_comments = content_comments_data[i].count_comments;
+            //if(use_cache) {
+                if (content_comments_data[content_data[i].pk_content]) { // если есть - добавлять
+                    arr[content_data[i].pk_content].count_comments = content_comments_data[content_data[i].pk_content];
+                } else {
+                    arr[content_data[i].pk_content].count_comments = 0; // начальное значение комментариев
                 }
-            }
+            //}
         }
         // end привести к удобному виду
 
