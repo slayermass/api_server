@@ -182,6 +182,8 @@ model.getMainpageInfo = async (fk_site) => {
  * @returns {Array}     - краткие данные контента в строгом порядке сохранения
  */
 model.getMainpagePublic = async (query) => {
+    const use_cache = false;
+
     // собрать в обернутую строку
     const add_select = query.select.map(el => `\`${el}\``).join(',');
 
@@ -213,52 +215,75 @@ model.getMainpagePublic = async (query) => {
         // ид контента на главной странице, в строгом порядке
         const ids_content = JSON.parse(mainpage_data.data);
 
-        // все и сразу напрямую из базы
-        /**let content_data = await new Promise((resolve, reject) => {
-            mysql
-                .getSqlQuery("SELECT " + add_select + ", IFNULL(SUM(`is_active`), 0) AS count_comments " +
-                    " FROM `" + TABLE_NAME_CONTENT + "` " +
-                    " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
-                    " LEFT JOIN `" + TABLE_NAME_CONTENT_COMMENTS + "` ON `fk_content` = `pk_content` " +
-                    " WHERE `pk_content` IN (:ids_content) GROUP BY `pk_content`;", {
-                    fk_site: query.fk_site,
-                    ids_content
-                })
-                .then(rows => {
-                    resolve(rows);
-                })
-                .catch(err => {
-                    errorlog(err);
-                    reject(err);
-                });
-        });*/
-
-        // кэш
-        const cache_select = query.select.map(el => el).join('-');
-
-        let cachedata = await cacheModel.hget(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`);
 
         let content_data;
+        let content_comments_data;
 
-        if (cachedata && cachedata.ids_content && isArraysEqual(cachedata.ids_content, ids_content)) {
-            content_data = cachedata.content_data;
-        } else {
-            content_data = await new Promise((resolve, reject) => {
+        // кэш
+        if(use_cache) {
+            const cache_select = query.select.map(el => el).join('-');
+
+            let cachedata = await cacheModel.hget(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`);
+
+            if (cachedata && cachedata.ids_content && isArraysEqual(cachedata.ids_content, ids_content)) {
+                content_data = cachedata.content_data;
+            } else {
+                content_data = await new Promise((resolve, reject) => {
+                    mysql
+                        .getSqlQuery("SELECT " + add_select +
+                            " FROM `" + TABLE_NAME_CONTENT + "` " +
+                            " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
+                            " WHERE `pk_content` IN (:ids_content);", {
+                            fk_site: query.fk_site,
+                            ids_content
+                        })
+                        .then(rows => {
+                            resolve(rows);
+
+                            cacheModel.hset(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`, {
+                                ids_content,
+                                content_data: rows
+                            });
+                        })
+                        .catch(err => {
+                            errorlog(err);
+                            reject(err);
+                        });
+                });
+            }
+
+            // кол-во комментариев отдельно
+            content_comments_data = await new Promise((resolve, reject) => {
                 mysql
-                    .getSqlQuery("SELECT " + add_select +
-                        " FROM `" + TABLE_NAME_CONTENT + "` " +
-                        " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
-                        " WHERE `pk_content` IN (:ids_content);", {
+                    .getSqlQuery("SELECT SUM(`is_active`) AS count_comments, fk_content" +
+                        " FROM `" + TABLE_NAME_CONTENT_COMMENTS + "`" +
+                        " WHERE `fk_content` IN (:ids_content);", {
                         fk_site: query.fk_site,
                         ids_content
                     })
                     .then(rows => {
                         resolve(rows);
-
-                        cacheModel.hset(`mainpage_${query.fk_site}_${query.current_id_index_page}`, `${cache_select}`, {
-                            ids_content,
-                            content_data: rows
-                        });
+                    })
+                    .catch(err => {
+                        errorlog(err);
+                        reject(err);
+                    });
+            });
+            // end кэш
+        } else {
+            // все и сразу напрямую из базы
+            content_data = await new Promise((resolve, reject) => {
+                mysql
+                    .getSqlQuery("SELECT " + add_select + ", IFNULL(SUM(`is_active`), 0) AS count_comments " +
+                        " FROM `" + TABLE_NAME_CONTENT + "` " +
+                        " LEFT JOIN `" + TABLE_NAME_CONTENT_MATERIAL_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric` " +
+                        " LEFT JOIN `" + TABLE_NAME_CONTENT_COMMENTS + "` ON `fk_content` = `pk_content` " +
+                        " WHERE `pk_content` IN (:ids_content) GROUP BY `pk_content`;", {
+                        fk_site: query.fk_site,
+                        ids_content
+                    })
+                    .then(rows => {
+                        resolve(rows);
                     })
                     .catch(err => {
                         errorlog(err);
@@ -266,36 +291,19 @@ model.getMainpagePublic = async (query) => {
                     });
             });
         }
-        // end кэш
-
-
-        // кол-во комментариев отдельно
-        let content_comments_data = await new Promise((resolve, reject) => {
-            mysql
-                .getSqlQuery("SELECT SUM(`is_active`) AS count_comments, fk_content" +
-                    " FROM `" + TABLE_NAME_CONTENT_COMMENTS + "`" +
-                    " WHERE `fk_content` IN (:ids_content);", {
-                    fk_site: query.fk_site,
-                    ids_content
-                })
-                .then(rows => {
-                    resolve(rows);
-                })
-                .catch(err => {
-                    errorlog(err);
-                    reject(err);
-                });
-        });
 
         // привести к удобному виду
         let arr = {};
 
         for(let i = 0; i < content_data.length; i++) {
             arr[content_data[i].pk_content] = content_data[i];
-            arr[content_data[i].pk_content].count_comments = 0; // начальное значение комментариев
 
-            if (content_comments_data[i]) { // если есть - добавлять
-                arr[content_data[i].pk_content].count_comments = content_comments_data[i].count_comments;
+            if(use_cache) {
+                arr[content_data[i].pk_content].count_comments = 0; // начальное значение комментариев
+
+                if (content_comments_data[i]) { // если есть - добавлять
+                    arr[content_data[i].pk_content].count_comments = content_comments_data[i].count_comments;
+                }
             }
         }
         // end привести к удобному виду
