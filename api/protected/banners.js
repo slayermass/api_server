@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const model = require('../../models/mysql/banners');
+const BadRequestError = require('../../functions').BadRequestError;
 
 /**
  * создание/обновление баннера

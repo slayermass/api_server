@@ -24,4 +24,6 @@ router.use(require('./banners'));
 
 router.use(require('./cache'));
 
+router.use(require('./content_authors'));
+
 module.exports = router;

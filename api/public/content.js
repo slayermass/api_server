@@ -2,8 +2,7 @@ const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
     model = require('../../models/mysql/content'),
     empty = require('is-empty'),
-    PUBLIC_FILES_URL = require('../../functions').PUBLIC_FILES_URL,
-    errorlog = require('../../functions').error;
+    PUBLIC_FILES_URL = require('../../functions').PUBLIC_FILES_URL;
 
 /**
  * getting a content for public site (index page)

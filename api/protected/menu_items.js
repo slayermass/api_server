@@ -2,7 +2,8 @@ const router = require('express').Router(),
     model = require('../../models/mysql/menu_items'),
     BadRequestError = require('../../functions').BadRequestError,
     InternalServerError = require('../../functions').InternalServerError,
-    modelMenu = require('../../models/mysql/menu');
+    modelMenu = require('../../models/mysql/menu'),
+    cacheModel = require('../../functions/cache');
 
 /**
  * find menu items by pk_menu or label_menu
@@ -108,6 +109,8 @@ router.post('/menu', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -119,6 +122,8 @@ router.post('/menu', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -156,6 +161,8 @@ router.post('/menu_item', (req, res, next) => {
                     id: data.id,
                     isnew: data.isnew
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -167,6 +174,8 @@ router.post('/menu_item', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -197,6 +206,8 @@ router.delete('/menu_item', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -225,6 +236,8 @@ router.delete('/menu', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
@@ -251,6 +264,8 @@ router.post('/menu_sort', (req, res, next) => {
                 res.send({
                     success: true
                 });
+
+                cacheModel.flushdb();
             })
             .catch(err => {
                 next(err);
