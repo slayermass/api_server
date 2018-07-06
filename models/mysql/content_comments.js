@@ -124,7 +124,6 @@ model.countCommentsByContentIn = async (pk_arr) => {
             .then(rows => {
                 let ret = {};
 
-                console.log(rows);
                 for(let i = 0; i < rows.length; i ++) {
                     ret[rows[i].fk_content] = rows[i].count_comments;
                 }
