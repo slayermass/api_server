@@ -818,9 +818,10 @@ model.findPublic = async (params) => {
             content_chosen: (callback) => { //кол-во записей
                 if (params.chosen === 1) {
                     mysql
-                        .getSqlQuery("SELECT " + select + " FROM `" + TABLE_NAME + "`" +
+                        .getSqlQuery("SELECT " + select + ", COUNT(`pk_comment`) AS count_comments FROM `" + TABLE_NAME + "`" +
+                            " LEFT JOIN `" + TABLE_NAME_CONTENT_COMMENTS + "` ON `pk_content` = `fk_content` " +
                             " WHERE `" + TABLE_NAME + "`.`fk_site` = :fk_site AND `status_content` = 1 AND `is_chosen` = 1" +
-                            " ORDER BY " + orderby + ";"
+                            " GROUP BY `pk_content` ORDER BY " + orderby + ";"
                             , {
                                 fk_site: params.fk_site,
                                 limit: params.limit,
@@ -846,8 +847,7 @@ model.findPublic = async (params) => {
                 return reject(err);
             }
 
-
-            // найти кол-во комментариев отдельно
+            // для всех новостей поиск комментов
             let pk_contents = [];
             // если нет комментов, то отдавать 0
             for(let i = 0; i < results.content_data.length; i ++) {
@@ -862,7 +862,8 @@ model.findPublic = async (params) => {
                     results.content_data[i].count_comments = count_comments[results.content_data[i].pk_content] || 0;
                 }
             }
-            // end найти кол-во комментариев отдельно
+            // end для всех новостей
+
 
             resolve({
                 data: results.content_data,
