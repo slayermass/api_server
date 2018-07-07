@@ -27,10 +27,9 @@ router.get('/upload/f/:n', (req, res, next) => {
                         let stat = fs.statSync(filePath);
 
                         res.writeHead(200, {
-                            'Cache-Control': 'max-age=31536000',
-                            'Content-Type': mime.contentType(req.params.n),
-                            'Content-Length': stat.size,
-                            'Content-Disposition': `filename="${encodeURIComponent(data.original_name_file)}"`
+                            'cache-control': 'max-age=31536000',
+                            'content-Type': mime.contentType(req.params.n),
+                            'content-Length': stat.size
                         });
 
                         let readStream = fs.createReadStream(filePath);
