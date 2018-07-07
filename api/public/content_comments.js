@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const BadRequestError = require('../../functions').BadRequestError;
-const empty = require('is-empty');
 const model = require('../../models/mysql/content_comments');
 const Entities = require('html-entities').XmlEntities;
 const entities = new Entities();
