@@ -16,7 +16,7 @@ mysql.formatBind();
 let search = "президент";
 
 mysql
-    .getSqlQuery('SELECT `id` FROM all WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
+    .getSqlQuery('SELECT `id` FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
         //.getSqlQuery('SELECT * FROM all ORDER BY id DESC LIMIT 10', {
         search
     })

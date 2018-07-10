@@ -14,4 +14,6 @@ router.use(require('./content_comments'));
 
 router.use(require('./banners'));
 
+router.use(require('./content_search'));
+
 module.exports = router;
