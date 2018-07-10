@@ -13,7 +13,6 @@ router.get('/content_search', async (req, res, next) => {
     let limit = parseInt(req.query.limit, 10) || 20;
     limit = (limit > 20) ? 20 : limit;
     let offset = parseInt(req.query.offset, 10) || 0;
-    offset = (offset > 20) ? 20 : offset;
 
     if (isNaN(fk_site) || fk_site < 1) {
         next(BadRequestError());

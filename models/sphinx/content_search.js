@@ -25,7 +25,9 @@ model.searchPolitsibru = async (search, limit, offset) => {
     try {
         let ids = await new Promise((resolve, reject) => {
             sphinx
-                .getSqlQuery('SELECT `id` FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT :offset,:limit;', {
+                .getSqlQuery('SELECT `id` FROM politsibru WHERE MATCH(:search) ' +
+                    ' ORDER BY publish_date DESC LIMIT :offset,:limit ' +
+                    ' OPTION max_matches = 100;', { // сотки должно хватить
                     search,
                     limit,
                     offset
@@ -92,10 +94,21 @@ model.searchPolitsibru = async (search, limit, offset) => {
                     });
             });
 
-            //console.log(count, content);
+            // сортировка и приведение в порядок
+            let ret = [];
+            let temp = {};
+
+            for(let i = 0; i < content.length; i ++) {
+                temp[content[i].pk_content] = content[i];
+            }
+
+            for(let i = 0; i < pk_content_arr.length; i ++) {
+                ret.push(temp[pk_content_arr[i]]);
+            }
+            // end сортировка и приведение в порядок
 
             return {
-                data: content,
+                data: ret,
                 count
             };
         } else {
