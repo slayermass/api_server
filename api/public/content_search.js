@@ -1,8 +1,6 @@
 const router = require('express').Router(),
     BadRequestError = require('../../functions').BadRequestError,
-    model = require('../../models/sphinx/content_search'),
-    empty = require('is-empty'),
-    PUBLIC_FILES_URL = require('../../functions').PUBLIC_FILES_URL;
+    model = require('../../models/sphinx/content_search');
 
 /**
  * поиск контента
@@ -27,7 +25,7 @@ router.get('/content_search', async (req, res, next) => {
                 data = await model.searchPolitsibru(search, limit, offset);
             }
 
-            res.send({data});
+            res.send(data);
         } catch (err) {
             next(err);
         }
