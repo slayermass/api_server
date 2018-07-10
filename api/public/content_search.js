@@ -8,8 +8,10 @@ const router = require('express').Router(),
  * @see model.search(...)
  */
 router.get('/content_search', async (req, res, next) => {
+    console.log(req.query);
+
     const fk_site = parseInt(req.query.fk_site, 10);
-    const search = req.query.search;
+    const search = req.query.q;
     let limit = parseInt(req.query.limit, 10) || 20;
     limit = (limit > 20) ? 20 : limit;
     let offset = parseInt(req.query.offset, 10) || 0;

@@ -52,7 +52,7 @@ model.searchPolitsibru = async (search, limit, offset) => {
             let content = await new Promise((resolve, reject) => {
                 mysql
                     .getSqlQuery("SELECT `pk_content`, `slug_content`, `title_content`, `publish_date`, " +
-                        "`headimgsrc_content`, `intro_content`, `fk_user_created`, `fk_material_type`, `text_content`," +
+                        "`headimgsrc_content`, `text_content`," +
                         "`name_material_rubric`, count(ip) AS views FROM `" + TABLE_NAME + "` " +
                         " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                         " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric`" +
@@ -112,10 +112,16 @@ model.searchPolitsibru = async (search, limit, offset) => {
                 count
             };
         } else {
-            return {};
+            return {
+                data: {},
+                count: 0
+            };
         }
     } catch (err) {
-        return {};
+        return {
+            data: {},
+            count: 0
+        };
     }
 };
 
