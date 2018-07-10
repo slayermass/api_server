@@ -22,15 +22,19 @@ mysql.formatBind();
  * @param {int} offset    - смещение выборки
  */
 model.searchPolitsibru = async (search, limit, offset) => {
+    let max_matches = limit * offset;
+    if(max_matches === 0) max_matches = 20; // чем дальше ищешь, тем больше искать
+
     try {
         let ids = await new Promise((resolve, reject) => {
             sphinx
                 .getSqlQuery('SELECT `id` FROM politsibru WHERE MATCH(:search) ' +
                     ' ORDER BY publish_date DESC LIMIT :offset,:limit ' +
-                    ' OPTION max_matches = 100;', { // сотки должно хватить
+                    ' OPTION max_matches = :max_matches;', { // сотки должно хватить
                     search,
                     limit,
-                    offset
+                    offset,
+                    max_matches
                 })
                 .then(rows => {
                     resolve(rows);
