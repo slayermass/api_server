@@ -8,6 +8,7 @@ const upload_files = require('../../models/mysql/upload_files');
 
 /**
  * потоковая отдача файлов
+ * TODO OLD удалить, неудачная идея, отдача статики нужна через nginx
  *
  * @param {string} n - название файла
  */
