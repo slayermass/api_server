@@ -36,7 +36,7 @@ mysql
     });
 
 mysql
-    .getSqlQuery('SELECT `id`, publish_date FROM politsibru ORDER BY pk_content DESC LIMIT 0,10', {
+    .getSqlQuery('SELECT `id` FROM politsibru ORDER BY id DESC LIMIT 0,10', {
         //.getSqlQuery('SELECT * FROM all ORDER BY id DESC LIMIT 10', {
         search
     })

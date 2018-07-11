@@ -30,6 +30,7 @@ app.use('/papi', require('./api/public'));//публичное api
 app.use((req, res, next) => {
     let err = new Error('Not Found');
     err.status = 404;
+    err.message = `404 URL: ${req.originalUrl}`;
     next(err);
 });
 

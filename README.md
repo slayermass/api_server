@@ -5,6 +5,9 @@ crontab -e
 # nginx.conf
 underscores_in_headers on;
 
+//sphinx
+/usr/bin/indexer --rotate --config /etc/sphinx/sphinx.conf --all
+sudo systemctl restart searchd
 
 # nginx настройки хоста
 # serve static files
