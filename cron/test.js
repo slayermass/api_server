@@ -13,10 +13,18 @@ const
 
 mysql.formatBind();
 
-let search = "президент";
+// добавление в реалтайм индекс
+//mysql.getSqlQuery('INSERT INTO politsibrt(id, title_content, text_content, publish_date) VALUES (106667, \'барнаул\', \'барнаул\', 1531240086)',{});
+// удаление из реалтайм индекса
+/**mysql.getSqlQuery('DELETE FROM politsibrt WHERE id IN (:arr)',{
+    arr: [106667]
+});*/
+
+
+let search = "барнаул";
 
 mysql
-    .getSqlQuery('SELECT `id` FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
+    .getSqlQuery('SELECT `id`, publish_date FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
         //.getSqlQuery('SELECT * FROM all ORDER BY id DESC LIMIT 10', {
         search
     })

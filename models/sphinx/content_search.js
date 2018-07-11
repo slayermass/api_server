@@ -129,4 +129,37 @@ model.searchPolitsibru = async (search, limit, offset) => {
     }
 };
 
+/**
+ * удаление из реалтайм индекса
+ * @param {array} arr - ид контента
+ */
+model.deleteByIdPolitsibru = async (arr) => {
+    sphinx.getSqlQuery('DELETE FROM politsibrt WHERE id IN (:arr)',{
+        arr: arr.map(el => Number(el))
+    });
+};
+
+/**
+ * добавление в реалтайм индекс
+ * @param {Object} data -
+ *      1
+ */
+model.addByIdPolitsibru = async (data) => {
+    const publish_date = new Date(data.publish_date).getTime() / 1000;
+
+    sphinx.getSqlQuery('INSERT INTO politsibrt(id, title_content, text_content, publish_date) ' +
+        'VALUES (:id, :title_content, :text_content, :publish_date)',{
+        id              : data.pk_content,
+        title_content   : data.title_content,
+        text_content    : data.text_content,
+        publish_date
+    })
+    .then(data => {
+        console.log(data);
+    })
+    .catch(err => {
+        errorlog(err);
+    });
+};
+
 module.exports = model;

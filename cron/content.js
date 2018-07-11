@@ -1,5 +1,5 @@
 let checkPublishUpdate = require('../models/mysql/content').checkPublishUpdate;
-let errorlog = require('../functions').error;
+const errorlog = require('../functions').error;
 
 /**
  * декоратор для подсчета времени выполнения

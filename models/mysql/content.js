@@ -26,7 +26,7 @@ const
     addWhere = require('../../functions').addWhere,
     uploadFilesModel = require('./upload_files'),
     contentCommentsModel = require('./content_comments'),
-    requestIp = require('request-ip');
+    sphinxModel = require('../sphinx/content_search');
 
 mysql.formatBind();
 
@@ -172,6 +172,9 @@ model.delete = (delArr) => {
             .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `pk_content` IN(" + delArr.join(',') + ")", {})
             .then(rows => {
                 resolve(rows.affectedRows);
+
+                // удалить из поиска
+                sphinxModel.deleteByIdPolitsibru(delArr);
             })
             .catch(err => {
                 reject(err);
@@ -369,6 +372,16 @@ model.update = async (cobj, fk_site) => {
                 if (cobj.tags) {
                     model.saveTags(fk_site, cobj.tags, cobj.pk_content);
                 }
+
+                /**if(cobj.status_content === 1) {
+                    // если обновлено и опубликовано - добавить в поиск
+                    sphinxModel.addByIdPolitsibru({
+                        pk_content      : cobj.pk_content,
+                        title_content   : cobj.title_content,
+                        text_content    : cobj.text_content,
+                        publish_date
+                    });
+                }*/
             })
             .catch(err => {
                 reject(err);
@@ -508,6 +521,26 @@ model.save = async (cobj, fk_site) => {
                         if (cobj.tags && cobj.tags.length >= 1) {
                             model.saveTags(fk_site, cobj.tags, row.insertId);
                         }
+
+                        if(cobj.status_content === 1) {
+                            // найти время публикации и добавить в поиск
+                            mysql
+                                .getSqlQuery("SELECT `publish_date` FROM `" + TABLE_NAME + "`" +
+                                    " WHERE `pk_content` = :pk_content;",{
+                                    pk_content: row.insertId
+                                })
+                                .then(rows => {
+                                    sphinxModel.addByIdPolitsibru({
+                                        pk_content      : row.insertId,
+                                        title_content   : cobj.title_content,
+                                        text_content    : cobj.text_content,
+                                        publish_date    : rows[0].publish_date
+                                    });
+                                })
+                                .catch(() => {
+                                    reject();
+                                });
+                        }
                     })
                     .catch(err => {
                         reject(err);
@@ -606,14 +639,40 @@ model.incrViews = async (fk_site, pk_content, slug_content, ip) => {
  *
  * @returns {Promise}
  */
-model.checkPublishUpdate = () => {
+model.checkPublishUpdate = async () => {
+    const publish_date = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+
+    // найти заранее все информацию
+    let published_arr = await new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("SELECT `pk_content`, `title_content`, `text_content`, `publish_date` FROM `" + TABLE_NAME + "`" +
+                " WHERE `status_content` = 3 AND `publish_date` <= :publish_date;", {
+                publish_date
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(() => {
+                reject();
+            });
+    });
+
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("UPDATE `" + TABLE_NAME + "` SET `status_content` = 1 WHERE `status_content` = 3 AND `publish_date` <= :publish_date;", {
-                publish_date: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
+                publish_date
             })
             .then(data => {
                 resolve(data.affectedRows);
+
+                for(let i = 0; i < published_arr.length; i++) {
+                    sphinxModel.addByIdPolitsibru({
+                        pk_content      : published_arr[i].pk_content,
+                        title_content   : published_arr[i].title_content,
+                        text_content    : published_arr[i].text_content,
+                        publish_date    : published_arr[i].publish_date
+                    });
+                }
             })
             .catch(() => {
                 reject();
