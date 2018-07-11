@@ -38,7 +38,6 @@ app.use(function (err, req, res, next) {
     let status = err.status || 500;
     res.sendStatus(status);
     errorlog(err);
-    console.log(err);
 });
 
 const server = app.listen(port, function(){
