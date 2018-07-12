@@ -70,7 +70,7 @@ model.update = async (params) => {
  * инфа о баннере
  *
  * @param {Object} params
- *      @param {in} fk_site - ид ресурса
+ *      @param {int} fk_site - ид ресурса
  *      @param {int} banner_pos - позиция баннера
  */
 model.infoBanner = async (params) => {
@@ -79,6 +79,29 @@ model.infoBanner = async (params) => {
             .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `pos_banner` = :pos_banner;", {
                 pos_banner  : params.banner_pos,
                 fk_site     : params.fk_site
+            })
+            .then(rows => {
+                resolve(rows);
+            })
+            .catch(err => {
+                errorlog(err);
+                reject(err);
+            });
+    });
+};
+
+/**
+ * удаление баннера по ид
+ *
+ * @param {int} fk_site - ид ресурса
+ * @param {int} id_banner - ид баннера
+ */
+model.deleteBanner = async (fk_site, id_banner) => {
+    return new Promise((resolve, reject) => {
+        mysql
+            .getSqlQuery("DELETE FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `id_banner` = :id_banner;", {
+                id_banner,
+                fk_site
             })
             .then(rows => {
                 resolve(rows);

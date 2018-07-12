@@ -69,4 +69,31 @@ router.get('/banner', async (req, res, next) => {
     }
 });
 
+/**
+ * удаление баннера
+ *
+ * @see model.deleteBanner
+ */
+router.delete('/banner', async ({body}, res, next) => {
+    body.fk_site = parseInt(body.fk_site, 10);
+    body.id_banner = parseInt(body.id_banner, 10);
+
+    if (isNaN(body.fk_site) || body.fk_site < 1
+        || isNaN(body.id_banner) || body.id_banner < 1
+    ) {
+        next(BadRequestError());
+    } else {
+        try {
+            let data = await model.deleteBanner(body.fk_site, body.id_banner);
+
+            res.send({
+                success : true,
+                affectedRows: data.affectedRows
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+});
+
 module.exports = router;
