@@ -10,7 +10,7 @@
     "cron:content": "node cron/content.js",
     "cron:cache": "node cron/cache.js",
     "restart": "pm2 stop webserver && pm2 delete webserver && npm run start",
-    "test": "mocha tests/content --exit"
+    "test": "NODE_ENV=test mocha tests/politsib --exit"
   },
   "author": "slayermass",
   "license": "MIT",

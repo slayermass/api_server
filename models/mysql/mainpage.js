@@ -181,6 +181,10 @@ model.getMainpageInfo = async (fk_site) => {
 model.getMainpagePublic = async (query) => {
     //const use_cache = true;
 
+    if(!query.select.includes('pk_content')) {
+        query.select.push('pk_content'); // pk_content всегда должен быть
+    }
+
     // собрать в обернутую строку
     const add_select = query.select.map(el => `\`${el}\``).join(',');
 
