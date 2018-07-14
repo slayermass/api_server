@@ -8,8 +8,8 @@ const
     TABLE_NAME_VIEWS = 'content_views',
     TABLE_NAME_RUBRIC = require('../mysql/content_material_rubric').getTableName(),
     errorlog = require('../../functions').error,
-    contentCommentsModel = require('../mysql/content_comments');
-
+    contentCommentsModel = require('../mysql/content_comments'),
+    sphinx = require('../../db/mysql_sphinx_local');
 
 mysql.formatBind();
 
@@ -21,11 +21,6 @@ mysql.formatBind();
  * @param {int} offset    - смещение выборки
  */
 model.searchPolitsibru = async (search, limit, offset) => {
-    // попробовать так
-    const
-        sphinx = require('../../db/mysql_sphinx_local');
-    sphinx.formatBind();
-
     let max_matches = limit * offset;
     if(max_matches === 0) max_matches = 20; // чем дальше ищешь, тем больше искать
 

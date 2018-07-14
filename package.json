@@ -4,12 +4,12 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "startdev": "nodemon -e '.js' app.js",
-    "start": "pm2 start app.js -i max --name webserver",
+    "startdev": "NODE_ENV=development nodemon -e '.js' app.js",
+    "start": "NODE_ENV=production pm2 start app.js -i max --name webserver",
     "stop": "pm2 delete webserver",
     "cron:content": "node cron/content.js",
     "cron:cache": "node cron/cache.js",
-    "restart": "pm2 stop webserver && pm2 delete webserver && npm run start",
+    "restart": "NODE_ENV=production pm2 stop webserver && pm2 delete webserver && npm run start",
     "test": "NODE_ENV=test mocha tests/politsib --exit"
   },
   "author": "slayermass",
