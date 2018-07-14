@@ -21,17 +21,17 @@ const
 
 let search = "барнаул";
 
-mysql
-    .getSqlQuery('SELECT `id`, publish_date FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
+/**mysql
+    .getSqlQueryConn('SELECT `id`, publish_date FROM politsibru WHERE MATCH(:search) ORDER BY publish_date DESC LIMIT 0,10', {
         //.getSqlQuery('SELECT * FROM all ORDER BY id DESC LIMIT 10', {
         search
     })
     .then(data => {
-        console.log(data)
+        console.log('search '+search,data)
     })
     .catch(err => {
         console.error(err)
-    });
+    });*/
 
 mysql
     .getSqlQuery('SELECT `id` FROM politsibru ORDER BY id DESC LIMIT 0,10', {
@@ -39,8 +39,10 @@ mysql
         search
     })
     .then(data => {
-        console.log(data)
+        console.log('lastid:', data);
+        process.exit(process.exitCode);
     })
     .catch(err => {
-        console.error(err)
+        console.error(err);
+        process.exit(process.exitCode);
     });
