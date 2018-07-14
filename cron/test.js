@@ -11,8 +11,6 @@
 const
     mysql = require('../db/mysql_sphinx_local');
 
-mysql.formatBind();
-
 // добавление в реалтайм индекс
 //mysql.getSqlQuery('INSERT INTO politsibrt(id, title_content, text_content, publish_date) VALUES (106667, \'барнаул\', \'барнаул\', 1531240086)',{});
 // удаление из реалтайм индекса
