@@ -17,6 +17,8 @@ const fs = require('fs'),
  * @param {String} err - описание ошибки
  */
 module.exports.error = (err) => {
+    if(process.env.NODE_ENV === 'test') return; // в ошибочных тестах мильон инфы вываливается
+
     if(err.status === 404) {
         logger.error(err.message);
         console.log(err.message);

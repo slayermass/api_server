@@ -16,7 +16,7 @@ router.get('/mainpage', async (req, res, next) => {
     query.fk_site = parseInt(query.fk_site, 10);
     query.select = (!empty(query.select)) ? query.select.split(',') : []; // только определенные поля на выбор
 
-    if(isNaN(query.fk_site) || query.fk_site < 1 || query.select.length === 0) {
+    if(isNaN(query.fk_site) || query.fk_site < 1) {
         next(BadRequestError());
     } else {
         try {

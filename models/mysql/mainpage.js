@@ -169,6 +169,7 @@ model.getMainpageInfo = async (fk_site) => {
 /**
  * получение инфы о главной странице по дате
  * + кол-во активных комментов = сумма всех is_active
+ * без select должен выдать минимальную инфу(pk_content)
  *
  * TODO подумать над 'привести' - чтоб без лишних выкрутасов
  *
@@ -182,7 +183,7 @@ model.getMainpagePublic = async (query) => {
     //const use_cache = true;
 
     if(!query.select.includes('pk_content')) {
-        query.select.push('pk_content'); // pk_content всегда должен быть
+        query.select.push('pk_content');
     }
 
     // собрать в обернутую строку

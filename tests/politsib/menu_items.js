@@ -1,7 +1,7 @@
 module.exports = ({chai, chaiHttp, server, expect}) => describe('Меню', () => {
 
     describe('/GET /papi/menu_items', () => {
-        it('(public) главная страница', (done) => {
+        it('(public) Меню', (done) => {
             chai.request(server)
                 .get('/papi/menu_items')
                 .query({
@@ -26,6 +26,36 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Меню', () =
                     res.body.menu_items[0].should.contain.property('path_menu_item');
                     res.body.menu_items[0].name_menu_item.should.be.a('string');
                     res.body.menu_items[0].path_menu_item.should.be.a('string');
+
+                    done();
+                });
+        });
+    });
+
+    describe('/GET /papi/menu_items', () => {
+        it('(public) Меню ошибка без `label_menu`', (done) => {
+            chai.request(server)
+                .get('/papi/menu_items')
+                .query({
+                    "fk_site": 1
+                })
+                .end((err, res) => {
+                    res.should.have.status(400);
+
+                    done();
+                });
+        });
+    });
+
+    describe('/GET /papi/menu_items', () => {
+        it('(public) Меню ошибка без `fk_site`', (done) => {
+            chai.request(server)
+                .get('/papi/menu_items')
+                .query({
+                    "label_menu" : 'main'
+                })
+                .end((err, res) => {
+                    res.should.have.status(400);
 
                     done();
                 });
