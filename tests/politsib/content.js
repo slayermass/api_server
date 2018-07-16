@@ -1,5 +1,6 @@
 module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Контент', () => {
 
+    // для создания, выборки, удаления
     let pk_content;
     let slug_content;
 
@@ -23,7 +24,7 @@ module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Кон
                     }
                 })
                 .end((err, res) => {
-                    console.log(res);
+                    console.log(res.body);
 
                     res.should.have.status(200);
                     res.body.should.be.a('object');
@@ -31,10 +32,14 @@ module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Кон
                     res.body.should.have.property('success');
                     res.body.success.should.be.true;
 
-                    /**res.body.should.have.property('pk_content');
-                    res.body.pk_content.should.be.a('number');*/
+                    res.body.should.have.property('pk_content');
+                    res.body.pk_content.should.be.a('number');
+
+                    res.body.should.have.property('slug_content');
+                    res.body.slug_content.should.be.a('string');
 
                     pk_content = res.body.pk_content;
+                    slug_content = res.body.slug_content;
 
                     done();
                 });

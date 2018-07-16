@@ -486,11 +486,8 @@ model.save = async (cobj, fk_site) => {
     return new Promise((resolve, reject) => {
         //сохранение контента
         model
-            .checkUniqSlug(slug, fk_site)
+            .checkUniqSlug(slug, fk_site, [], true)
             .then(slug => {
-
-                console.log(slug);
-                return;
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
@@ -517,10 +514,21 @@ model.save = async (cobj, fk_site) => {
                     })
                     .then(row => {
                         // добавить slug_content в вывод
-
-                        resolve({
-                            pk_content: row.insertId
-                        });
+                        mysql
+                            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `pk_content` = :pk_content;",{
+                                pk_content: row.insertId
+                            })
+                            .then(rows => {
+                                resolve({
+                                    pk_content  : row.insertId,
+                                    slug_content: rows[0].slug_content
+                                });
+                            })
+                            .catch(() => {
+                                resolve({
+                                    pk_content: row.insertId
+                                });
+                            });
 
                         // сохранение тегов позже
                         if (cobj.tags && cobj.tags.length >= 1) {
@@ -560,28 +568,36 @@ model.save = async (cobj, fk_site) => {
  * @param {String} slug         - слаг для сохранения
  * @param {int} fk_site         - ид сайта(уникальный в рамках сайта)
  * @param {Array} ignored_slugs - слаги для игнора(например при сохранении проверять все, но не сохраняемый) необяз
+ * @param {boolean} findAll     - искать ли полное совпадение(для сохранения уж точно)
  */
-model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
+model.checkUniqSlug = (slug, fk_site, ignored_slugs = [], findAll = false) => {
     let ignore_slugs = ignored_slugs.join(',');
+    let add_sql = '';
+
+    if(!findAll) {
+        add_sql = ' AND `slug_content` NOT IN(:ignore_slugs)';
+    }
 
     return new Promise((resolve, reject) => {
         mysql
             .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "`" +
-                " WHERE `fk_site` = :fk_site AND `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
+                " WHERE `fk_site` = :fk_site AND `slug_content` LIKE '" + slug + "%' " + add_sql + ';', {
                 ignore_slugs,
                 fk_site
             })
             .then(rows => {
                 // новый алгоритм
                 let slugs_diff_arr = [];
+                // дальше может получиться что и нет, но если найдены значения, значит надо менять слаг
+                let hasRows = rows.length > 0;
 
                 // найти разницу между всеми похожими слагами и сделать еще один, отличный от всех
                 // т.к. логика = добавление числа через '-', то все без '-' тоже можно отсеивать
                 // для test отсеивать testo, testovyy, брать для сравнения test-1, test-vagon
                 // с помощью регулярки конечно умнее
                 for (let i = 0; i < rows.length; i++) {
-                    if(rows[i].includes(slug)) {
-                        let rep = rows[i].replace(slug, ''); // замена полного вхождения
+                    if(rows[i].slug_content.includes(slug)) {
+                        let rep = rows[i].slug_content.replace(slug, ''); // замена полного вхождения
 
                         // интересны только числовые окончания
                         if(rep.length && rep.startsWith('-') && /^-\d+$/.test(rep)) {
@@ -590,37 +606,20 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
                     }
                 }
 
-                // максимальное существующее значение
-                let biggestNumberPostfix = slugs_diff_arr.sort()[slugs_diff_arr.length-1];
+                // может и быть первым и точным совпадением, поэтому начальное значение - 0
+                let biggestNumberPostfix = 0;
+
+                if(slugs_diff_arr.length) {
+                    // максимальное существующее значение
+                    biggestNumberPostfix = slugs_diff_arr.sort()[slugs_diff_arr.length-1];
+                }
 
                 // увеличить число, склеить и вернуть
-                if(biggestNumberPostfix) {
+                if(hasRows) { // всегда если что-нибудь найдено
                     resolve(`${slug}-${++biggestNumberPostfix}`);
                 } else {
                     resolve(slug);
                 }
-
-                ///console.log(slugs_diff_arr, biggestNumberPostfix, `${slug}-${uniqnum}`);
-
-                /**let uniqnum = 0;
-
-                //проверять, если число - увеличивать, если нет - неважно, может там другая строка начинается с этого слага
-                for (let i = 0; i < rows.length; i++) {
-                    let sp = rows[i].slug_content.split('-');
-                    let num = parseInt(sp[sp.length - 1], 10);
-
-                    if (isNaN(num)) {
-                        continue;
-                    }
-
-                    uniqnum = ++num;
-                }
-
-                if(uniqnum > 0) { // а то новым 0 добавлялся
-                    slug = `${slug}-${uniqnum}`;
-                }
-
-                resolve(slug);*/
             })
             .catch(() => { // все нормально - не найдено похожих
                 resolve(slug);

@@ -15,8 +15,8 @@ const exportsObj = {chai, chaiHttp, server, expect, auth_id};
 
 
 // PUBLIC
-//require('./menu_items')(exportsObj);
+require('./menu_items')(exportsObj);
 
-//require('./mainpage')(exportsObj);
+require('./mainpage')(exportsObj);
 
-require('./content')(exportsObj);
+//require('./content')(exportsObj);

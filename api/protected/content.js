@@ -149,10 +149,8 @@ router.post('/content', (req, res, next) => {
         contentModel
             .save(content, body.fk_site)
             .then(data => {
-                res.send({
-                    success: true,
-                    pk_content: data.pk_content
-                });
+                data.success = true;
+                res.send(data);
 
                 // добавить pk после создания
                 content.pk_content = data.pk_content;
