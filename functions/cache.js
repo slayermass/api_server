@@ -2,8 +2,14 @@ const redis = require("redis");
 const client = redis.createClient();
 const empty = require('is-empty');
 
-client.on("error", function (err) {
-    console.log("Error " + err);
+let errors = false;
+
+/**
+ * Можно и без кэша, только спамить в лог будет
+ */
+client.on("error", (err) => {
+    errors = true;
+    console.log(`Ошибка подключения к REDIS: ${err}. Кэш не используется`);
 });
 
 /**
@@ -13,6 +19,8 @@ client.on("error", function (err) {
  * @param value
  */
 module.exports.hset = (key, field, value) => {
+    if(errors) return false;
+
     value.cached = true;
 
     client.hset(key, field, JSON.stringify(value));
@@ -25,6 +33,8 @@ module.exports.hset = (key, field, value) => {
  * @returns {Promise<*>}
  */
 module.exports.hget = async (key, field) => {
+    if(errors) return false;
+
     try {
         const cachedata = await new Promise((resolve, reject) => {
             client.hget(key, field, (err, result) => {
@@ -59,6 +69,8 @@ module.exports.hget = async (key, field) => {
  * flushdb
  */
 module.exports.flushdb = () => {
+    if(errors) return false;
+
     client.flushdb( function (err, succeeded) {
         console.log(succeeded);
     });

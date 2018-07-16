@@ -12,7 +12,7 @@ router.get('/menu_items', (req, res, next) => {
         label_menu = req.query.label_menu;
 
     //проверка
-    if ((isNaN(fk_site) || fk_site < 1) || label_menu.length < 1) {
+    if ((isNaN(fk_site) || fk_site < 1) || !label_menu || label_menu.length < 1) {
         next(BadRequestError());
     } else {
         model
