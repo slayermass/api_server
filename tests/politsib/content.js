@@ -1,64 +1,9 @@
-'use strict';
+module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Контент', () => {
 
-process.env.NODE_ENV = 'test';
+    let pk_content;
+    let slug_content;
 
-let chai = require('chai');
-let chaiHttp = require('chai-http');
-let server = require('../app');
-
-// -----------
-const auth_id = require("../config/index").auth_id;
-let pk_content;
-
-chai.should();
-
-chai.use(chaiHttp);
-
-describe('Контент', () => {
-
-    /**describe('/GET /papi/mainpage', () => {
-        it('(public) главная страница', (done) => {
-            chai.request(server)
-                .get('/papi/mainpage')
-                .query({
-                    "fk_site": 1,
-                    "select" : 'title_content,text_content'
-                })
-                .end((err, res) => {
-                    console.log(res.body.data[0]);
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-
-                    res.body.should.have.property('success');
-                    res.body.success.should.be.true;
-
-                    res.body.should.have.property('data');
-                    res.body.data.should.be.a('array');
-
-                    // обяз параметры
-                    res.body.data[0].should.contain.property('pk_content');
-                    res.body.data[0].pk_content.should.be.a('number');
-
-                    res.body.data[0].should.contain.property('count_comments');
-                    res.body.data[0].count_comments.should.be.a('number');
-                    // end обяз параметры
-
-                    // доп параметры
-                    res.body.data[0].should.contain.property('title_content');
-                    res.body.data[0].title_content.should.be.a('string');
-
-                    res.body.data[0].should.contain.property('text_content');
-                    res.body.data[0].text_content.should.be.a('string');
-                    // end доп параметры
-
-                    done();
-                });
-        });
-    });*/
-
-    // TODO
-    // headimglabel_content - добавить
-    /**describe('/GET /api/content', () => {
+    describe('/GET /api/content', () => {
         it('(private) Создание контента', (done) => {
             chai.request(server)
                 .post('/api/content')
@@ -67,31 +12,34 @@ describe('Контент', () => {
                     "fk_site": 1,
                     "content": {
                         "title": "Тестовый",
-                        "text": "<p>содерж</p>",
+                        "seo_title_content": "Тестовый",
+                        "intro": "не удалять",
+                        "text": "<p>не удалять</p>",
                         "fk_user_created": 1,
                         "type_material": 3,
-                        "intro": "краткое содерж",
                         "tags": [{
                             "id": 29 // тега может и не быть
                         }]
                     }
                 })
                 .end((err, res) => {
+                    console.log(res);
+
                     res.should.have.status(200);
                     res.body.should.be.a('object');
 
                     res.body.should.have.property('success');
                     res.body.success.should.be.true;
 
-                    res.body.should.have.property('pk_content');
-                    res.body.pk_content.should.be.a('number');
+                    /**res.body.should.have.property('pk_content');
+                    res.body.pk_content.should.be.a('number');*/
 
                     pk_content = res.body.pk_content;
 
                     done();
                 });
         });
-    });*/
+    });
 
 
     // нет slug

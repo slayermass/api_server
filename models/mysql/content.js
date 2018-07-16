@@ -488,6 +488,9 @@ model.save = async (cobj, fk_site) => {
         model
             .checkUniqSlug(slug, fk_site)
             .then(slug => {
+
+                console.log(slug);
+                return;
                 mysql
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
@@ -513,6 +516,8 @@ model.save = async (cobj, fk_site) => {
                         exclude_rss_yandex  : cobj.exclude_rss_yandex
                     })
                     .then(row => {
+                        // добавить slug_content в вывод
+
                         resolve({
                             pk_content: row.insertId
                         });
@@ -561,12 +566,43 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
 
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
+            .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "`" +
+                " WHERE `fk_site` = :fk_site AND `slug_content` LIKE '" + slug + "%' AND `slug_content` NOT IN(:ignore_slugs)", {
                 ignore_slugs,
                 fk_site
             })
             .then(rows => {
-                let uniqnum = 0;
+                // новый алгоритм
+                let slugs_diff_arr = [];
+
+                // найти разницу между всеми похожими слагами и сделать еще один, отличный от всех
+                // т.к. логика = добавление числа через '-', то все без '-' тоже можно отсеивать
+                // для test отсеивать testo, testovyy, брать для сравнения test-1, test-vagon
+                // с помощью регулярки конечно умнее
+                for (let i = 0; i < rows.length; i++) {
+                    if(rows[i].includes(slug)) {
+                        let rep = rows[i].replace(slug, ''); // замена полного вхождения
+
+                        // интересны только числовые окончания
+                        if(rep.length && rep.startsWith('-') && /^-\d+$/.test(rep)) {
+                            slugs_diff_arr.push(Math.abs(+rep));
+                        }
+                    }
+                }
+
+                // максимальное существующее значение
+                let biggestNumberPostfix = slugs_diff_arr.sort()[slugs_diff_arr.length-1];
+
+                // увеличить число, склеить и вернуть
+                if(biggestNumberPostfix) {
+                    resolve(`${slug}-${++biggestNumberPostfix}`);
+                } else {
+                    resolve(slug);
+                }
+
+                ///console.log(slugs_diff_arr, biggestNumberPostfix, `${slug}-${uniqnum}`);
+
+                /**let uniqnum = 0;
 
                 //проверять, если число - увеличивать, если нет - неважно, может там другая строка начинается с этого слага
                 for (let i = 0; i < rows.length; i++) {
@@ -584,7 +620,7 @@ model.checkUniqSlug = (slug, fk_site, ignored_slugs = []) => {
                     slug = `${slug}-${uniqnum}`;
                 }
 
-                resolve(slug);
+                resolve(slug);*/
             })
             .catch(() => { // все нормально - не найдено похожих
                 resolve(slug);

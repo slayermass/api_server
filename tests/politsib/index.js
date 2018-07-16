@@ -4,14 +4,19 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../app');
 const expect = require('chai').expect;
+const auth_id = require('../../config').auth_id;
 
 // -----------
 chai.should();
 
 chai.use(chaiHttp);
 
-const exportsObj = {chai, chaiHttp, server, expect};
+const exportsObj = {chai, chaiHttp, server, expect, auth_id};
 
-require('./menu_items')(exportsObj);
 
-require('./mainpage')(exportsObj);
+// PUBLIC
+//require('./menu_items')(exportsObj);
+
+//require('./mainpage')(exportsObj);
+
+require('./content')(exportsObj);
