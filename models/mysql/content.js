@@ -429,6 +429,8 @@ model.saveTags = (fk_site, ctags, fk_content) => {
 /**
  * создание контента
  *
+ * очевидно нужен async/await
+ *
  * @param {Object} cobj
  *      @param {String} title_content       - заголовок
  *      @param {String} text_content        - содержимое
@@ -458,7 +460,6 @@ model.save = async (cobj, fk_site) => {
     if (cobj.intro_content.length === 0) {
         cobj.intro_content = null;
     }
-
 
     // publish_date должен быть явно указан
     let publish_date;
@@ -513,7 +514,6 @@ model.save = async (cobj, fk_site) => {
                         exclude_rss_yandex  : cobj.exclude_rss_yandex
                     })
                     .then(row => {
-                        // добавить slug_content в вывод
                         mysql
                             .getSqlQuery("SELECT `slug_content` FROM `" + TABLE_NAME + "` WHERE `pk_content` = :pk_content;",{
                                 pk_content: row.insertId
