@@ -147,7 +147,7 @@ model.findPkBySlug = (fk_site, pk_content, slug_content) => {
             resolve(pk_content);
         } else {
             mysql
-                .getSqlQuery("SELECT `pk_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `slug_content` = :slug_content", {
+                .getSqlQuery("SELECT `pk_content` FROM `" + TABLE_NAME + "` WHERE `fk_site` = :fk_site AND `slug_content` = :slug_content;", {
                     fk_site,
                     slug_content: entities.encode(slug_content)
                 })

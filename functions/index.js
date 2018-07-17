@@ -7,6 +7,7 @@ const fs = require('fs'),
     imageType = require('image-type'),
     http = require('http'),
     https = require('https'),
+    empty = require('is-empty'),
 
     //папка для сохранения
     path_to_save_global = require('../config').path_to_save_global;
@@ -17,7 +18,7 @@ const fs = require('fs'),
  * @param {String} err - описание ошибки
  */
 module.exports.error = (err) => {
-    if(process.env.NODE_ENV === 'test') return; // в ошибочных тестах мильон инфы вываливается
+    if(process.env.NODE_ENV === 'test') return; // в ложных тестах мильон инфы вываливается
 
     if(err.status === 404) {
         logger.error(err.message);
@@ -41,10 +42,12 @@ module.exports.decodeHtml = (html) => {
 /**
  * вернуть гарантированный массив
  *
- * @param {String|number} param - любое значение
+ * @param {String|number|void} param - любое значение
  */
 module.exports.doArray = (param) => {
-    if (!Array.isArray(param)) {
+    if(empty(param)) { // пустое значение - пустой массив
+        return [];
+    } else if (!Array.isArray(param)) {
         param = [param];
     }
 

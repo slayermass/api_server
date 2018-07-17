@@ -5,8 +5,8 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Меню', () =
             chai.request(server)
                 .get('/papi/menu_items')
                 .query({
-                    "fk_site": 1,
-                    "label_menu" : 'main'
+                    fk_site: 1,
+                    label_menu : 'main'
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -37,7 +37,7 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Меню', () =
             chai.request(server)
                 .get('/papi/menu_items')
                 .query({
-                    "fk_site": 1
+                    fk_site: 1
                 })
                 .end((err, res) => {
                     res.should.have.status(400);
@@ -52,7 +52,7 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Меню', () =
             chai.request(server)
                 .get('/papi/menu_items')
                 .query({
-                    "label_menu" : 'main'
+                    label_menu : 'main'
                 })
                 .end((err, res) => {
                     res.should.have.status(400);

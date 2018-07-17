@@ -5,8 +5,8 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Главная 
             chai.request(server)
                 .get('/papi/mainpage')
                 .query({
-                    "fk_site": 1,
-                    "select" : 'title_content,text_content'
+                    fk_site: 1,
+                    select : 'title_content,text_content'
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -44,7 +44,7 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Главная 
             chai.request(server)
                 .get('/papi/mainpage')
                 .query({
-                    "fk_site": 1
+                    fk_site: 1
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -73,7 +73,7 @@ module.exports = ({chai, chaiHttp, server, expect}) => describe('Главная 
             chai.request(server)
                 .get('/papi/mainpage')
                 .query({
-                    "select" : 'title_content,text_content'
+                    select : 'title_content,text_content'
                 })
                 .end((err, res) => {
                     res.should.have.status(400);
