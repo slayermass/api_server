@@ -19,4 +19,4 @@ require('./menu_items')(exportsObj);
 
 require('./mainpage')(exportsObj);
 
-//require('./content')(exportsObj);
+require('./content')(exportsObj);
