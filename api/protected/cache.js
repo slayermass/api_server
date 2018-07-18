@@ -7,7 +7,10 @@ const cacheModel = require('../../functions/cache');
 router.delete('/cache', async (req, res, next) => {
     cacheModel.flushdb();
 
-    res.send('cache cleared'); // ?
+    res.send({
+        success: true,
+        message : 'cache cleared'
+    });
 });
 
 module.exports = router;
