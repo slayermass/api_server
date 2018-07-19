@@ -114,7 +114,8 @@ router.post('/content', (req, res, next) => {
             type_material       : parseInt(body.content.type_material, 10),
             headimglabel_content: body.content.headimglabel_content,
             is_chosen           : parseInt(body.content.is_chosen, 10) || 0,
-            fk_material_rubric  : parseInt(body.content.rubric, 10) || 1
+            fk_material_rubric  : parseInt(body.content.rubric, 10) || 1,
+            caption_content     : body.content.caption_content
         };
     } catch (e) {
         next(BadRequestError());

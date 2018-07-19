@@ -17,6 +17,7 @@ module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Кон
                         seo_title_content: "Тестовый",
                         intro: "не удалять",
                         text: "<p>не удалять</p>",
+                        caption_content: "Фото: Адронный коллайдер",
                         fk_user_created: 1,
                         type_material: 3,
                         tags: [{
@@ -77,6 +78,9 @@ module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Кон
 
                         res.body.data.should.have.property('intro_content');
                         res.body.data.intro_content.should.be.a('string');
+
+                        res.body.data.should.have.property('caption_content');
+                        res.body.data.caption_content.should.be.a('string');
 
                         res.body.data.should.have.property('text_content');
                         res.body.data.text_content.should.be.a('string');

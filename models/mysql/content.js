@@ -302,6 +302,7 @@ model.find = (params) => {
  *      @param {int}    is_chosen           - избранная ли новость
  *      @param {int}    fk_material_rubric  - рубрика контента
  *      @param {int}    exclude_rss_yandex  - исключить из яндекс rss?
+ *      @param {String} caption_content     - подпись фото, видео, ссылка
  * @param {int} fk_site                     - ид сайта
  */
 model.update = async (cobj, fk_site) => {
@@ -314,6 +315,7 @@ model.update = async (cobj, fk_site) => {
     cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
+    cobj.caption_content = entities.encode(cobj.caption_content) || null;
     cobj.headimglabel_content = entities.encode(cobj.headimglabel_content) || null;
     cobj.headimgsrc_content = (cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
@@ -343,7 +345,8 @@ model.update = async (cobj, fk_site) => {
                 " `text_content` = :text_content, `status_content` = :status_content, " +
                 " `fk_user_updated` = :fk_user_updated, `update_date` = :update_date, `intro_content` = :intro_content, " +
                 " `fk_material_type` = :fk_material_type, `headimglabel_content` = :headimglabel_content, " +
-                " `fk_material_rubric` = :fk_material_rubric, `exclude_rss_yandex` = :exclude_rss_yandex " +
+                " `fk_material_rubric` = :fk_material_rubric, `exclude_rss_yandex` = :exclude_rss_yandex," +
+                " `caption_content` = :caption_content " +
                 add_sql +
                 "WHERE `pk_content` = :pk_content"
                 , {
@@ -361,7 +364,8 @@ model.update = async (cobj, fk_site) => {
                     seo_title_content   : cobj.seo_title_content,
                     is_chosen           : cobj.is_chosen,
                     fk_material_rubric  : cobj.fk_material_rubric,
-                    exclude_rss_yandex  : cobj.exclude_rss_yandex
+                    exclude_rss_yandex  : cobj.exclude_rss_yandex,
+                    caption_content     : cobj.caption_content
                 })
             .then(row => {
                 resolve({
@@ -445,6 +449,7 @@ model.saveTags = (fk_site, ctags, fk_content) => {
  *      @param {int}    is_chosen              - избранная ли новость
  *      @param {int}    fk_material_rubric  - рубрика контента
  *      @param {int}    exclude_rss_yandex  - исключить из яндекс rss?
+ *      @param {String} caption_content     - подпись фото, видео, ссылка
  * @param {int} fk_site                     - ид сайта
  */
 model.save = async (cobj, fk_site) => {
@@ -454,6 +459,7 @@ model.save = async (cobj, fk_site) => {
     cobj.seo_title_content = entities.encode(cobj.seo_title_content);
     cobj.text_content = entities.encode(cobj.text_content);
     cobj.intro_content = entities.encode(cobj.intro_content);
+    cobj.caption_content = entities.encode(cobj.caption_content) || null;
     cobj.headimglabel_content = entities.encode(cobj.headimglabel_content) || null;
     cobj.headimgsrc_content = (cobj.headimgsrc_content && cobj.headimgsrc_content.length > 0) ? entities.encode(cobj.headimgsrc_content) : null;
 
@@ -493,10 +499,10 @@ model.save = async (cobj, fk_site) => {
                     .getSqlQuery("INSERT INTO `" + TABLE_NAME + "` " +
                         "(`title_content`, `seo_title_content`, `slug_content`, `headimgsrc_content`, `intro_content`, `text_content`," +
                         " `fk_site`, `status_content`, `fk_user_created`, `publish_date`, `fk_material_type`," +
-                        " `headimglabel_content`, `is_chosen`, `fk_material_rubric`, `exclude_rss_yandex`)" +
+                        " `headimglabel_content`, `is_chosen`, `fk_material_rubric`, `exclude_rss_yandex`, `caption_content`)" +
                         " VALUES (:title_content, :seo_title_content, :slug, :headimgsrc_content, :intro_content, :text_content," +
                         " :fk_site, :status_content, :fk_user_created, :publish_date, :fk_material_type," +
-                        " :headimglabel_content, :is_chosen, :fk_material_rubric, :exclude_rss_yandex);", {
+                        " :headimglabel_content, :is_chosen, :fk_material_rubric, :exclude_rss_yandex, :caption_content);", {
                         title_content       : cobj.title_content,
                         slug,
                         text_content        : cobj.text_content,
@@ -511,7 +517,8 @@ model.save = async (cobj, fk_site) => {
                         seo_title_content   : cobj.seo_title_content,
                         is_chosen           : cobj.is_chosen,
                         fk_material_rubric  : cobj.fk_material_rubric,
-                        exclude_rss_yandex  : cobj.exclude_rss_yandex
+                        exclude_rss_yandex  : cobj.exclude_rss_yandex,
+                        caption_content     : cobj.caption_content
                     })
                     .then(row => {
                         mysql
@@ -1041,7 +1048,8 @@ model.findOnePublic = async (params) => {
         let [content_data, content_tags] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT `pk_content`, `slug_content`, `title_content`, `publish_date`, `headimgsrc_content`," +
-                    " `intro_content`, `fk_user_created`, `fk_material_type`, `text_content`, `name_material_rubric`, count(ip) AS views" +
+                    " `intro_content`, `fk_user_created`, `fk_material_type`, `text_content`, `name_material_rubric`," +
+                    " `caption_content`, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
                     " LEFT JOIN `" + TABLE_NAME_VIEWS + "` ON `pk_content` = `fk_content`" +
                     " LEFT JOIN `" + TABLE_NAME_RUBRIC + "` ON `fk_material_rubric` = `pk_material_rubric`" +
