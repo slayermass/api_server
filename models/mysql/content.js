@@ -377,15 +377,7 @@ model.update = async (cobj, fk_site) => {
                     model.saveTags(fk_site, cobj.tags, cobj.pk_content);
                 }
 
-                /**if(cobj.status_content === 1) {
-                    // если обновлено и опубликовано - добавить в поиск
-                    sphinxModel.addByIdPolitsibru({
-                        pk_content      : cobj.pk_content,
-                        title_content   : cobj.title_content,
-                        text_content    : cobj.text_content,
-                        publish_date
-                    });
-                }*/
+                // TODO сохранение сюжетов
             })
             .catch(err => {
                 reject(err);
@@ -541,6 +533,8 @@ model.save = async (cobj, fk_site) => {
                         if (cobj.tags && cobj.tags.length >= 1) {
                             model.saveTags(fk_site, cobj.tags, row.insertId);
                         }
+
+                        // TODO сохранение сюжетов
 
                         if(cobj.status_content === 1) {
                             // найти время публикации и добавить в поиск

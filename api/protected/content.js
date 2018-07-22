@@ -115,7 +115,8 @@ router.post('/content', (req, res, next) => {
             headimglabel_content: body.content.headimglabel_content,
             is_chosen           : parseInt(body.content.is_chosen, 10) || 0,
             fk_material_rubric  : parseInt(body.content.rubric, 10) || 1,
-            caption_content     : body.content.caption_content
+            caption_content     : body.content.caption_content,
+            content_stories     : body.content.content_stories
         };
     } catch (e) {
         next(BadRequestError());

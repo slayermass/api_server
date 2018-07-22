@@ -26,4 +26,6 @@ router.use(require('./cache'));
 
 router.use(require('./content_authors'));
 
+router.use(require('./content_stories'));
+
 module.exports = router;
