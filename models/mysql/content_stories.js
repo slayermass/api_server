@@ -75,4 +75,12 @@ model.create = async (fk_site, content_story) => {
     });
 };
 
+/**
+ * get a table name of model
+ * @returns {string}
+ */
+model.getTableName = () => {
+    return TABLE_NAME;
+};
+
 module.exports = model;

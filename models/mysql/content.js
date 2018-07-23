@@ -10,6 +10,8 @@ const
     TABLE_NAME_RUBRIC = require('../../models/mysql/content_material_rubric').getTableName(),
     TABLE_NAME_R_CONTENT_TO_TAGS = require('../../models/mysql/r_content_to_tags').getTableName(),
     TABLE_NAME_CONTENT_COMMENTS = require('../../models/mysql/content_comments').getTableName(),
+    TABLE_NAME_R_CONTENT_TO_CONTENT_STORIES = require('./r_content_to_content_stories').getTableName(),
+    TABLE_NAME_CONTENT_STORIES = require('./content_stories').getTableName(),
     mysql = require('../../db/mysql'),
     Entities = require('html-entities').XmlEntities,
     entities = new Entities(),
@@ -23,6 +25,7 @@ const
     moment = require('moment'),
     empty = require('is-empty'),
     r_content_to_tagsmodel = require('./r_content_to_tags'),
+    r_content_to_content_stories = require('./r_content_to_content_stories'),
     addWhere = require('../../functions').addWhere,
     uploadFilesModel = require('./upload_files'),
     contentCommentsModel = require('./content_comments'),
@@ -53,7 +56,7 @@ model.findOne = async (params) => {
     }
 
     try {
-        let [content_data, content_tags] = await Promise.all([
+        let [content_data, content_tags, content_stories] = await Promise.all([
             await mysql
                 .getSqlQuery("SELECT *, count(ip) AS views" +
                     " FROM `" + TABLE_NAME + "`" +
@@ -67,12 +70,18 @@ model.findOne = async (params) => {
                     " LEFT JOIN `tags` ON tags.pk_tag = fk_tag " +
                     " WHERE `fk_content` = :pk_content", {
                     pk_content
+                }),
+            await mysql
+                .getSqlQuery("SELECT `pk_content_story`, `title_content_story` FROM `" + TABLE_NAME_R_CONTENT_TO_CONTENT_STORIES + "`" +
+                    " LEFT JOIN `" + TABLE_NAME_CONTENT_STORIES + "` ON `" + TABLE_NAME_CONTENT_STORIES + "`.`pk_content_story` = `fk_content_stories` " +
+                    " WHERE `fk_content` = :pk_content", {
+                    pk_content
                 })
         ]);
 
         content_data = content_data[0];
 
-        //если есть данные - добавить туда теги
+        // добавить теги
         if (!empty(content_data)) {
             content_data.tags = [];
 
@@ -85,6 +94,21 @@ model.findOne = async (params) => {
         }
 
         content_tags = null;
+        // end добавить теги
+
+        // добавить сюжеты
+        if (!empty(content_data)) {
+            content_data.content_stories = [];
+
+            for (let i = 0; i < content_stories.length; i++) {
+                content_data.content_stories.push({
+                    id: content_stories[i].pk_content_story,
+                    label: content_stories[i].title_content_story
+                });
+            }
+        }
+        // end добавить сюжеты
+
         data.data = content_data;
         content_data = null;
         // end найти основные данные
@@ -377,7 +401,8 @@ model.update = async (cobj, fk_site) => {
                     model.saveTags(fk_site, cobj.tags, cobj.pk_content);
                 }
 
-                // TODO сохранение сюжетов
+                // сохранение сюжетов
+                r_content_to_content_stories.save(fk_site, cobj.pk_content, cobj.content_stories);
             })
             .catch(err => {
                 reject(err);
@@ -534,7 +559,8 @@ model.save = async (cobj, fk_site) => {
                             model.saveTags(fk_site, cobj.tags, row.insertId);
                         }
 
-                        // TODO сохранение сюжетов
+                        // сохранение сюжетов
+                        r_content_to_content_stories.save(fk_site, row.insertId, cobj.content_stories);
 
                         if(cobj.status_content === 1) {
                             // найти время публикации и добавить в поиск
