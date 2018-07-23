@@ -52,7 +52,7 @@ model.findAll = async (fk_site, pk_menu, label_menu) => {
 
     return new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT `name_menu_item`, `path_menu_item`, `pk_menu_item`" +
+            .getSqlQuery("SELECT * " +
                 " FROM `" + TABLE_NAME + "`" +
                 " LEFT JOIN `" + MENU_TABLE_NAME + "` ON " + MENU_TABLE_NAME + ".pk_menu = " + TABLE_NAME + ".fk_menu" +
                 " WHERE `fk_site` = :fk_site AND `isactive` = 1 AND " + condition +
@@ -69,8 +69,6 @@ model.findAll = async (fk_site, pk_menu, label_menu) => {
                         label_menu,
                         menu_items: rows
                     };
-
-                    console.log(rows);
 
                     resolve(rows);
                 }
