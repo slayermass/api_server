@@ -1,5 +1,7 @@
 module.exports = ({chai, chaiHttp, server, expect, auth_id}) => describe('Контент', () => {
 
+    // TODO тест выборки по ид сюжета
+
     // для создания, выборки, удаления
     let pk_content;
     //let slug_content = 'testovyy-1';

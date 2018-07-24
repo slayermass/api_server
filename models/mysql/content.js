@@ -845,6 +845,7 @@ model.getTableName = () => {
  *      @param {int} status     - статус контента (0 - весь)
  *      @param {int} withcount  - включить ли вывод кол-ва записей, учитывает входные параметры
  *      @param {int} withcomments    - включить ли вывод комментариев
+ *      @param {int} pk_content_story - ид сюжета, 0 если без
  *
  * @returns {Promise<any>}
  */
@@ -867,10 +868,13 @@ model.findPublic = async (params) => {
         add_sql += ' AND `fk_material_rubric` = :fk_material_rubric ';
     }
 
-    if(!empty(params.name_tag) && params.name_tag.length) {
+    if(!empty(params.name_tag) && params.name_tag.length) { // или поиск по тегам
         add_sql += ' AND `name_tag` = :name_tag ';
         left_join += " LEFT JOIN `" + TABLE_NAME_R_CONTENT_TO_TAGS + "` ON `pk_content` = `fk_content`" +
             " LEFT JOIN `" + TABLE_NAME_TAGS + "` ON `pk_tag` = `fk_tag` ";
+    } else if(params.pk_content_story && params.pk_content_story > 0) { // или поиск по сюжетам
+        left_join += " LEFT JOIN `" + TABLE_NAME_R_CONTENT_TO_CONTENT_STORIES + "` ON `pk_content` = `fk_content` ";
+        add_sql += ' AND `fk_content_stories` = :fk_content_story ';
     }
     // end глобально необходимые доп.параметры поиска sql
 
@@ -888,7 +892,8 @@ model.findPublic = async (params) => {
                             limit               : params.limit,
                             offset              : params.offset,
                             fk_material_rubric  : params.id_rubric,
-                            name_tag            : params.name_tag
+                            name_tag            : params.name_tag,
+                            fk_content_story    : params.pk_content_story
                         })
                     .then(rows => {
                         callback(null, rows);
@@ -919,7 +924,8 @@ model.findPublic = async (params) => {
                             limit               : params.limit,
                             offset              : params.offset,
                             fk_material_rubric  : params.id_rubric,
-                            name_tag            : params.name_tag
+                            name_tag            : params.name_tag,
+                            fk_content_story    : params.pk_content_story
                         })
                         .then(row => {
                             callback(null, {
