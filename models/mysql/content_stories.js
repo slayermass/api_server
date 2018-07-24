@@ -17,10 +17,16 @@ mysql.formatBind();
  * вывод всех сюжетов
  * TODO cache
  */
-model.getAll = async (fk_site) => {
+model.getAll = async (fk_site, is_active) => {
+    let add_sql = '';
+
+    if(is_active) { // только активные
+        add_sql = ' AND `is_active` = 1 ';
+    }
+
     let data = await new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "`  WHERE `fk_site` = :fk_site " +
+            .getSqlQuery("SELECT * FROM `" + TABLE_NAME + "`  WHERE `fk_site` = :fk_site " + add_sql +
                 " ORDER BY `sort` ASC;", {
                 fk_site
             })
@@ -35,7 +41,7 @@ model.getAll = async (fk_site) => {
 
     let count = await new Promise((resolve, reject) => {
         mysql
-            .getSqlQuery("SELECT COUNT(*) AS count FROM `" + TABLE_NAME + "`  WHERE `fk_site` = :fk_site;", {
+            .getSqlQuery("SELECT COUNT(*) AS count FROM `" + TABLE_NAME + "`  WHERE `fk_site` = :fk_site " + add_sql + ";", {
                 fk_site
             })
             .then(rows => {
